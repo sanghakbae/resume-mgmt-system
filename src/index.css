@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .resume-app {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .print-content {
+    width: 100% !important;
+  }
+
+  .print-content,
+  .print-content * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .resume-app .grid {
+    display: block !important;
+  }
+
+  .resume-app .shadow-sm,
+  .resume-app [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+}
