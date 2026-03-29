@@ -49,7 +49,7 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
 }
 
 export default function App() {
-  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? DEFAULT_GOOGLE_CLIENT_ID).trim();
+  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth();
   const adminEmails = ((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? "")
