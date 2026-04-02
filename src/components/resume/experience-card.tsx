@@ -1,5 +1,5 @@
 import { categoryMeta } from "@/data/resume";
-import { Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ExperienceItem } from "@/types/resume";
 
@@ -12,7 +12,7 @@ type ExperienceCardProps = {
 
 export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: ExperienceCardProps) {
   return (
-    <div className="rounded-[10px] border border-slate-200 p-3.5 sm:p-4">
+    <div className="rounded-[10px] border border-slate-200 p-3.5 sm:p-4" data-export-project-card>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h4 className="text-base font-semibold leading-6 text-slate-900">{item.title}</h4>
@@ -33,16 +33,32 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
         ) : null}
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+      <div className={`mt-3 grid gap-3 ${item.image ? "lg:grid-cols-[minmax(0,1fr)_320px]" : "grid-cols-1"}`}>
+        <div>
+          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">{item.description}</p>
 
-      {item.image ? (
-        <div className="mt-3 overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-          <img src={item.image} alt={`${item.title} 이미지`} className="h-auto max-h-72 w-full object-contain" />
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-sky-700 underline underline-offset-4"
+            >
+              프로젝트 링크
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          ) : null}
         </div>
-      ) : null}
+
+        {item.image ? (
+          <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+            <img src={item.image} alt={`${item.title} 이미지`} className="h-auto max-h-72 w-full object-contain" />
+          </div>
+        ) : null}
+      </div>
 
       {item.highlight.length ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-slate-200 bg-slate-900 px-2.5 py-1 text-[12px] leading-4 text-white">
             {categoryMeta[item.category].label}
           </span>
@@ -53,7 +69,7 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
           ))}
         </div>
       ) : (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-slate-200 bg-slate-900 px-2.5 py-1 text-[12px] leading-4 text-white">
             {categoryMeta[item.category].label}
           </span>

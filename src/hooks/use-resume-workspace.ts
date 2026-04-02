@@ -18,6 +18,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [showSavedNotice, setShowSavedNotice] = useState(false);
   const storageMode = useMemo(() => getStorageMode(), []);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
         .then(() => {
           setUpdatedAt(workspace.updatedAt);
           setError(null);
+          setShowSavedNotice(true);
         })
         .catch(() => {
           setError("이력서 데이터를 저장하지 못했습니다.");
@@ -85,6 +87,18 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
       window.clearTimeout(timer);
     };
   }, [canSave, companies, experiences, isLoading, ownerId, profile]);
+
+  useEffect(() => {
+    if (!showSavedNotice) return;
+
+    const timer = window.setTimeout(() => {
+      setShowSavedNotice(false);
+    }, 1500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [showSavedNotice]);
 
   const resetWorkspace = () => {
     setProfile(defaultProfile);
@@ -112,6 +126,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
       await saveWorkspace(workspace);
       setUpdatedAt(workspace.updatedAt);
       setError(null);
+      setShowSavedNotice(true);
     } catch {
       setError("이력서 데이터를 저장하지 못했습니다.");
     } finally {
@@ -130,6 +145,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
     isSaving,
     error,
     updatedAt,
+    showSavedNotice,
     storageMode,
     resetWorkspace,
     listWorkspaces,

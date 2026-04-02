@@ -13,7 +13,7 @@ import { CareerDashboard, ResumePreview } from "@/components/resume/resume-previ
 import { categoryOptions, defaultCompanyProfiles, defaultExperiences, defaultProfile, emptyCompanyForm, emptyExperienceForm } from "@/data/resume";
 import { useGoogleAuth } from "@/hooks/use-google-auth";
 import { useResumeWorkspace } from "@/hooks/use-resume-workspace";
-import { uploadResumeAsset } from "@/lib/supabase";
+import { isSupabaseConfigured, uploadResumeAsset } from "@/lib/supabase";
 import type {
   CompanyFormValues,
   CompanyProfile,
@@ -74,6 +74,7 @@ export default function App() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [isUploadingExperienceImage, setIsUploadingExperienceImage] = useState(false);
+  const [assetUploadError, setAssetUploadError] = useState<string | null>(null);
   const exportSectionRef = useRef<HTMLDivElement | null>(null);
   const activeOwnerId = isPublicResumeMode ? "public-resume" : isAdmin ? selectedOwnerId ?? user?.sub ?? "" : user?.sub ?? "";
   const effectiveIsEditMode = isPublicResumeMode ? isPublicEditor && isEditMode : isEditMode;
@@ -89,6 +90,7 @@ export default function App() {
     isSaving,
     error: workspaceError,
     updatedAt,
+    showSavedNotice,
     storageMode,
     resetWorkspace,
     listWorkspaces,
@@ -194,11 +196,12 @@ export default function App() {
       organization: form.organization.trim(),
       period: form.period.trim(),
       category: form.category,
-      description: form.description.trim(),
+      description: form.description,
       highlight: form.highlight
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean),
+      url: form.url.trim() || undefined,
       image: form.image || undefined,
     };
 
@@ -222,6 +225,7 @@ export default function App() {
       category: item.category,
       description: item.description,
       highlight: item.highlight.join(", "),
+      url: item.url ?? "",
       image: item.image ?? "",
     });
     setFormErrors({});
@@ -264,12 +268,36 @@ export default function App() {
     resetExperienceForm();
   };
 
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+          return;
+        }
+
+        reject(new Error("Failed to read file"));
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+
   const uploadProfilePhoto = async (file: File) => {
     setIsUploadingProfilePhoto(true);
+    setAssetUploadError(null);
 
     try {
+      if (!isSupabaseConfigured) {
+        const dataUrl = await readFileAsDataUrl(file);
+        setProfile((prev) => ({ ...prev, photo: dataUrl }));
+        return;
+      }
+
       const publicUrl = await uploadResumeAsset(file, activeOwnerId, "profile");
       setProfile((prev) => ({ ...prev, photo: publicUrl }));
+    } catch {
+      setAssetUploadError("프로필 사진을 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
       setIsUploadingProfilePhoto(false);
     }
@@ -277,10 +305,19 @@ export default function App() {
 
   const uploadExperienceImage = async (file: File) => {
     setIsUploadingExperienceImage(true);
+    setAssetUploadError(null);
 
     try {
+      if (!isSupabaseConfigured) {
+        const dataUrl = await readFileAsDataUrl(file);
+        setForm((prev) => ({ ...prev, image: dataUrl }));
+        return;
+      }
+
       const publicUrl = await uploadResumeAsset(file, activeOwnerId, "experience");
       setForm((prev) => ({ ...prev, image: publicUrl }));
+    } catch {
+      setAssetUploadError("업무 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
       setIsUploadingExperienceImage(false);
     }
@@ -297,6 +334,8 @@ export default function App() {
       document.body.appendChild(snapshotNode);
 
       try {
+        paginateExportSnapshot(snapshotNode);
+
         const canvas = await html2canvas(snapshotNode, {
           backgroundColor: "#f1f5f9",
           scale: 2,
@@ -342,6 +381,13 @@ export default function App() {
 
   return (
     <div className="resume-app h-screen overflow-hidden bg-slate-100 px-3 py-4 sm:px-4 md:px-6 md:py-6">
+      {showSavedNotice ? (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-4 screen-only">
+          <div className="rounded-[16px] border border-emerald-200 bg-white/95 px-6 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
+            <p className="text-base font-semibold text-slate-900">저장되었습니다</p>
+          </div>
+        </div>
+      ) : null}
       <div className="flex h-full flex-col gap-3 md:gap-5">
         <Card className="z-30 shrink-0 rounded-[10px] border border-slate-200 bg-white/95 shadow-sm backdrop-blur screen-only">
           <CardContent className="flex flex-col gap-3 p-3.5 sm:p-4 md:flex-row md:items-center md:justify-between">
@@ -405,6 +451,11 @@ export default function App() {
                       {authError}
                     </div>
                   ) : null}
+                  {assetUploadError ? (
+                    <div className="flex w-full items-center rounded-[10px] border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] leading-4 text-rose-700 md:w-auto">
+                      {assetUploadError}
+                    </div>
+                  ) : null}
                 </>
               )}
               {!isPublicResumeMode || isPublicEditor ? (
@@ -455,7 +506,11 @@ export default function App() {
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
           <div ref={exportSectionRef} className="space-y-4 md:space-y-5 pb-4">
-            {allExperiences.length ? <CareerDashboard items={allExperiences} profile={profile} companies={companies} /> : null}
+            {allExperiences.length ? (
+              <div data-export-dashboard>
+                <CareerDashboard items={allExperiences} profile={profile} companies={companies} />
+              </div>
+            ) : null}
 
             <div className={`grid gap-4 pt-1 md:gap-5 ${effectiveIsEditMode ? "xl:grid-cols-[360px_1fr]" : "grid-cols-1"}`}>
               {effectiveIsEditMode && (
@@ -612,14 +667,76 @@ function createExportSnapshotNode(exportNode: HTMLDivElement) {
   snapshotRoot.style.position = "fixed";
   snapshotRoot.style.left = "-100000px";
   snapshotRoot.style.top = "0";
-  snapshotRoot.style.width = "1280px";
+  snapshotRoot.style.width = "1120px";
   snapshotRoot.style.padding = "24px";
   snapshotRoot.style.background = "#f1f5f9";
   snapshotRoot.style.color = "#0f172a";
   snapshotRoot.style.fontFamily = '"Pretendard", "Noto Sans KR", system-ui, sans-serif';
+  snapshotRoot.style.boxSizing = "border-box";
+  const dashboardNode = exportNode.querySelector("[data-export-dashboard]")?.cloneNode(true) as HTMLElement | null;
+  const previewNode = exportNode.querySelector("[data-export-resume]")?.cloneNode(true) as HTMLElement | null;
 
-  const content = exportNode.cloneNode(true);
-  snapshotRoot.appendChild(content);
+  if (dashboardNode) snapshotRoot.appendChild(dashboardNode);
+  if (previewNode) snapshotRoot.appendChild(previewNode);
 
   return snapshotRoot;
+}
+
+function paginateExportSnapshot(snapshotRoot: HTMLDivElement) {
+  const rawDashboard = snapshotRoot.querySelector("[data-export-dashboard]") as HTMLElement | null;
+  const rawResume = snapshotRoot.querySelector("[data-export-resume]") as HTMLElement | null;
+
+  snapshotRoot.innerHTML = "";
+
+  if (rawDashboard) {
+    const firstPage = createExportPage();
+    firstPage.appendChild(rawDashboard);
+    snapshotRoot.appendChild(firstPage);
+  }
+
+  if (!rawResume) {
+    return;
+  }
+
+  const intro = rawResume.querySelector("[data-export-intro]")?.cloneNode(true) as HTMLElement | null;
+  const companySections = Array.from(rawResume.querySelectorAll("[data-export-company]")) as HTMLElement[];
+  const maxPageHeight = 1450;
+
+  let page = createResumeExportPage(rawResume);
+  snapshotRoot.appendChild(page.outer);
+
+  if (intro) {
+    page.content.appendChild(intro);
+  }
+
+  for (const section of companySections) {
+    const clonedSection = section.cloneNode(true) as HTMLElement;
+    page.content.appendChild(clonedSection);
+
+    if (page.outer.scrollHeight > maxPageHeight && page.content.children.length > (intro ? 1 : 0)) {
+      clonedSection.remove();
+      page = createResumeExportPage(rawResume);
+      snapshotRoot.appendChild(page.outer);
+      page.content.appendChild(clonedSection);
+    }
+  }
+}
+
+function createExportPage() {
+  const page = document.createElement("section");
+  page.style.marginBottom = "24px";
+  page.style.breakAfter = "page";
+  return page;
+}
+
+function createResumeExportPage(resumeTemplate: HTMLElement) {
+  const outer = resumeTemplate.cloneNode(false) as HTMLElement;
+  const contentTemplate = resumeTemplate.querySelector("[data-export-resume-content]") as HTMLElement | null;
+  const content = contentTemplate ? (contentTemplate.cloneNode(false) as HTMLElement) : document.createElement("div");
+
+  outer.appendChild(content);
+  outer.style.marginBottom = "24px";
+  outer.style.breakAfter = "page";
+
+  return { outer, content };
 }

@@ -22,6 +22,95 @@ function createWorkspace(ownerId: string, profile: Profile, companies: CompanyPr
   };
 }
 
+function mergeCompanyProfiles(existing: CompanyProfile[], defaults: CompanyProfile[]) {
+  const seen = new Set(existing.map((company) => company.organization));
+  return [...existing, ...defaults.filter((company) => !seen.has(company.organization))];
+}
+
+function normalizeCompanyName(name: string) {
+  return name === "무하유" ? "(주)무하유" : name;
+}
+
+function normalizeCompanyPosition(position?: string) {
+  if (!position) return position;
+  if (position === "팀장" || position === "과장(팀장)") return "Leader";
+  return position;
+}
+
+function mergeExperiences(existing: ExperienceItem[], defaults: ExperienceItem[]) {
+  const seen = new Set(existing.map((item) => `${item.organization}::${item.title}::${item.period}`));
+  return [...existing, ...defaults.filter((item) => !seen.has(`${item.organization}::${item.title}::${item.period}`))];
+}
+
+function ensureUniqueExperienceIds(items: ExperienceItem[]) {
+  const seen = new Set<number>();
+  let nextId = items.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+
+  return items.map((item) => {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      return item;
+    }
+
+    const nextItem = { ...item, id: nextId };
+    seen.add(nextId);
+    nextId += 1;
+    return nextItem;
+  });
+}
+
+function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
+  const source = `${item.title} ${item.description} ${item.highlight.join(" ")}`.toLowerCase();
+  const isCertificationProject =
+    source.includes("isms") ||
+    source.includes("isms-p") ||
+    source.includes("iso 27001") ||
+    source.includes("iso27001") ||
+    source.includes("csap") ||
+    source.includes("인증");
+
+  const normalizedItem = {
+    ...item,
+    organization: normalizeCompanyName(item.organization),
+  };
+
+  if (!isCertificationProject) {
+    return normalizedItem;
+  }
+
+  return { ...normalizedItem, category: "인증" };
+}
+
+function mergeWorkspaceWithDefaults(
+  workspace: ResumeWorkspace,
+  defaultProfile: Profile,
+  defaultCompanies: CompanyProfile[],
+  defaultExperiences: ExperienceItem[],
+): ResumeWorkspace {
+  const existingCompanies = workspace.companies ?? [];
+  const normalizedCompanies = existingCompanies.map((company) => ({
+    ...company,
+    organization: normalizeCompanyName(company.organization),
+    position: normalizeCompanyPosition(company.position),
+  }));
+  const normalizedExperiences = (workspace.experiences ?? []).map(normalizeExperienceCategory);
+
+  return {
+    ...workspace,
+    profile: workspace.profile ?? defaultProfile,
+    companies:
+      existingCompanies.length > 0
+        ? normalizedCompanies.filter(
+            (company, index, array) => array.findIndex((candidate) => candidate.organization === company.organization) === index,
+          )
+        : mergeCompanyProfiles([], defaultCompanies),
+    experiences:
+      normalizedExperiences.length > 0
+        ? ensureUniqueExperienceIds(normalizedExperiences)
+        : ensureUniqueExperienceIds(defaultExperiences.map(normalizeExperienceCategory)),
+  };
+}
+
 export function getStorageMode() {
   if (isSupabaseConfigured) return "supabase";
   return getApiBaseUrl() ? "api" : "local";
@@ -43,14 +132,14 @@ export async function loadWorkspace(ownerId: string, defaultProfile: Profile, de
       return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
     }
 
-    return {
+    return mergeWorkspaceWithDefaults({
       ownerId: data.owner_id,
       editorEmail: data.editor_email ?? null,
       profile: (data.profile as Profile) ?? defaultProfile,
       companies: (data.companies as CompanyProfile[]) ?? defaultCompanies,
       experiences: (data.experiences as ExperienceItem[]) ?? defaultExperiences,
       updatedAt: data.updated_at ?? new Date().toISOString(),
-    };
+    }, defaultProfile, defaultCompanies, defaultExperiences);
   }
 
   const apiBaseUrl = getApiBaseUrl();
@@ -67,20 +156,14 @@ export async function loadWorkspace(ownerId: string, defaultProfile: Profile, de
     }
 
     const workspace = (await response.json()) as ResumeWorkspace;
-    return {
-      ...workspace,
-      companies: workspace.companies ?? defaultCompanies,
-    };
+    return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
   }
 
   try {
     const raw = window.localStorage.getItem(getLocalWorkspaceKey(ownerId));
     if (!raw) return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
     const workspace = JSON.parse(raw) as ResumeWorkspace;
-    return {
-      ...workspace,
-      companies: workspace.companies ?? defaultCompanies,
-    };
+    return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
   } catch {
     return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
   }

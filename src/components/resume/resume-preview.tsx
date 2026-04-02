@@ -26,13 +26,13 @@ export function ResumePreview({
   const companyGroups = buildCompanyGroups(experiences, companies);
 
   return (
-    <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
-      <CardContent className="p-3.5 sm:p-4 md:p-5">
-        <div className="flex flex-col gap-5 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between">
+    <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm" data-export-resume>
+      <CardContent className="p-3.5 sm:p-4 md:p-5" data-export-resume-content>
+        <div className="flex flex-col gap-5 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between" data-export-intro>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100">
               {profile.photo ? (
-                <img src={profile.photo} alt={`${profile.name} 프로필 사진`} className="h-full w-full object-cover" />
+                <img src={profile.photo} alt={`${profile.name} 프로필 사진`} className="h-full w-full object-cover object-top" />
               ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-slate-900 text-white">
                   <HeaderIcon className="h-5 w-5" />
@@ -57,7 +57,7 @@ export function ResumePreview({
 
         <div className="mt-6 space-y-6">
           {companyGroups.map(({ company, items }) => (
-            <section key={company.organization} className="rounded-[18px] border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+            <section key={company.organization} className="rounded-[18px] border border-slate-200 bg-slate-50/70 p-4 sm:p-5" data-export-company>
               <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -178,7 +178,9 @@ export function CareerDashboard({
 
   for (const item of items) {
     for (const keyword of item.highlight) {
-      keywordCounts.set(keyword, (keywordCounts.get(keyword) ?? 0) + 1);
+      const normalizedKeyword = normalizeHighlightKeyword(keyword);
+      if (!normalizedKeyword) continue;
+      keywordCounts.set(normalizedKeyword, (keywordCounts.get(normalizedKeyword) ?? 0) + 1);
     }
   }
 
@@ -214,8 +216,13 @@ export function CareerDashboard({
     })
     .slice(0, 4);
   const complianceCoverage = collectCoverageKeywords(items, profile);
+  const categoryBucketMap: Partial<Record<ResumeCategory, ResumeCategory[]>> = {
+    "보안 컨설팅": ["보안 컨설팅", "인증"],
+    "인증": ["보안 컨설팅", "인증"],
+  };
   const categoryStats = categoryOptions.map((category) => {
-    const categoryItems = items.filter((item) => item.category === category);
+    const bucketCategories = categoryBucketMap[category] ?? [category];
+    const categoryItems = items.filter((item) => bucketCategories.includes(item.category));
     const count = categoryItems.length;
     const ratio = totalProjects > 0 ? Math.round((count / totalProjects) * 100) : 0;
     const tagCounts = new Map<string, number>();
@@ -294,7 +301,7 @@ export function CareerDashboard({
           <DashboardStat icon={BriefcaseBusiness} label="총 프로젝트" value={`${totalProjects}건`} />
           <DashboardStat icon={Sparkles} label="활성 카테고리" value={`${activeCategories}개`} />
           <DashboardStat icon={BarChart3} label="가장 많은 분야" value={topCategory ? categoryMeta[topCategory.category].label : "-"} />
-          <DashboardStat icon={Sparkles} label="고객사 / 조직" value={`${organizations}곳`} />
+          <DashboardStat icon={Sparkles} label="근무 조직" value={`${organizations}곳`} />
           <DashboardStat icon={CalendarRange} label="최근 프로젝트" value={recentProject?.period ?? "-"} />
         </div>
 
@@ -363,7 +370,7 @@ export function CareerDashboard({
             </div>
 
             <div className="rounded-[16px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_30px_rgba(148,163,184,0.12)]">
-              <p className="text-sm font-semibold text-slate-900">자주 등장한 키워드</p>
+              <p className="text-sm font-semibold text-slate-900">핵심 키워드</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {topKeywords.length ? (
                   topKeywords.map(([keyword, count]) => (
@@ -385,35 +392,11 @@ export function CareerDashboard({
                   <p className="text-[12px] leading-4 text-slate-500">
                     {recentProject.organization} · {recentProject.period}
                   </p>
-                  <p className="text-[13px] leading-5 text-slate-600">{recentProject.description}</p>
+                  <p className="whitespace-pre-wrap text-[13px] leading-5 text-slate-600">{recentProject.description}</p>
                 </div>
               ) : (
                 <p className="mt-3 text-[13px] leading-5 text-slate-500">최근 이력이 없습니다.</p>
               )}
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-              <div className="rounded-[16px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_30px_rgba(148,163,184,0.12)]">
-                <p className="text-sm font-semibold text-slate-900">최근 이력</p>
-                {recentProject ? (
-                  <div className="mt-3 space-y-1.5">
-                    <p className="text-[13px] font-medium leading-5 text-slate-900">{recentProject.title}</p>
-                    <p className="text-[12px] leading-4 text-slate-500">
-                      {recentProject.organization} · {recentProject.period}
-                    </p>
-                    <p className="text-[13px] leading-5 text-slate-600">{recentProject.description}</p>
-                  </div>
-                ) : (
-                  <p className="mt-3 text-[13px] leading-5 text-slate-500">최근 이력이 없습니다.</p>
-                )}
-              </div>
-
-              <div className="rounded-[16px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_30px_rgba(148,163,184,0.12)]">
-                <p className="text-sm font-semibold text-slate-900">시각 자료</p>
-                <p className="mt-3 text-[13px] leading-5 text-slate-600">
-                  이미지가 포함된 수행 업무는 총 {totalImages}건입니다. 제안서, 진단 화면, 아키텍처 스냅샷 같은 증빙 자료를 함께 관리할 수 있습니다.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -466,6 +449,31 @@ function collectCoverageKeywords(items: ExperienceItem[], profile: Profile) {
   const source = [profile.specialty, profile.certifications, ...items.flatMap((item) => [item.title, item.description, ...item.highlight])].join(" ");
   const keywords = ["ISMS", "ISMS-P", "ISO 27001", "ISO 27017", "CSAP", "PCI-DSS", "OT Security", "GDPR"];
   return keywords.filter((keyword) => source.toLowerCase().includes(keyword.toLowerCase())).slice(0, 8);
+}
+
+function normalizeHighlightKeyword(keyword: string) {
+  const trimmed = keyword.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  const lowSignalKeywords = new Set(["pm", "pl", "leader", "팀장", "운영"]);
+  if (lowSignalKeywords.has(lower)) return null;
+
+  if (lower.includes("isms-p")) return "ISMS-P";
+  if (lower === "isms") return "ISMS";
+  if (lower.includes("iso 27017") || lower.includes("iso27017")) return "ISO 27017";
+  if (lower.includes("iso 27001") || lower.includes("iso27001")) return "ISO 27001";
+  if (lower.includes("csap")) return "CSAP";
+  if (lower.includes("ot")) return "OT 보안";
+  if (lower.includes("nozomi")) return "Nozomi";
+  if (lower.includes("웹 모의해킹")) return "웹 모의해킹";
+  if (lower.includes("관리체계")) return "정보보호 관리체계";
+  if (lower.includes("위험")) return "위험평가";
+  if (lower.includes("망분리")) return "망분리";
+  if (lower.includes("하드닝")) return "하드닝";
+  if (lower.includes("개인정보")) return "개인정보보호";
+
+  return trimmed;
 }
 
 function getPeriodScore(period: string) {

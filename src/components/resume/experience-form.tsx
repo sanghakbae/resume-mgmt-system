@@ -110,6 +110,13 @@ export function ExperienceForm({
             onChange={(e) => updateField("description", e.target.value)}
           />
         </FormField>
+        <FormField label="프로젝트 URL">
+          <Input
+            value={form.url}
+            onChange={(e) => updateField("url", e.target.value)}
+            placeholder="예: https://example.com/project"
+          />
+        </FormField>
         <FormField label="핵심 키워드">
           <Input
             value={form.highlight}

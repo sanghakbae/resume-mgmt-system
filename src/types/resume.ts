@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 
-export type ResumeCategory = "모의해킹" | "취약점 진단" | "보안 컨설팅" | "클라우드 보안" | "개발/자동화";
+export type ResumeCategory = "모의해킹" | "취약점 진단" | "보안 컨설팅" | "클라우드 보안" | "개발/자동화" | "인증";
 
 export type ExperienceItem = {
   id: number;
@@ -10,6 +10,7 @@ export type ExperienceItem = {
   category: ResumeCategory;
   description: string;
   highlight: string[];
+  url?: string;
   image?: string;
 };
 
@@ -31,6 +32,7 @@ export type ExperienceFormValues = {
   category: ResumeCategory;
   description: string;
   highlight: string;
+  url: string;
   image: string;
 };
 
