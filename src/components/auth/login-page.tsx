@@ -61,6 +61,16 @@ export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps)
           </div>
         </section>
       </div>
+
+      {error || configError ? (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center px-4">
+          <div className="pointer-events-auto w-full max-w-[360px] rounded-[20px] border border-slate-200/80 bg-white px-4 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+            <p className="text-[13px] font-semibold leading-5 text-slate-900">
+              {error ?? configError}
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

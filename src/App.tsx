@@ -27,7 +27,6 @@ import type {
   WorkspaceSummary,
 } from "@/types/resume";
 
-const DEFAULT_GOOGLE_CLIENT_ID = "924920443826-lo1msns5cgvnh7u1714ikcqj2fq4srji.apps.googleusercontent.com";
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
   {
@@ -80,7 +79,7 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
 }
 
 export default function App() {
-  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
+  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "").trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
   const adminEmails = ((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? "")
     .split(",")
@@ -90,13 +89,14 @@ export default function App() {
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
-  const allowedEmails = [...new Set([...adminEmails, ...editorEmails])];
+  const loginAllowedEmails = [...new Set([...adminEmails, ...editorEmails])];
+  const editAllowedEmails = [...new Set([...adminEmails, ...editorEmails])];
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth({
-    allowedEmails,
-    deniedMessage: "관리자 계정만 로그인 가능합니다.",
+    allowedEmails: loginAllowedEmails,
+    deniedMessage: "totoriverce@gmail.com만 로그인 가능합니다.",
   });
   const isAdmin = !isPublicResumeMode && user ? adminEmails.includes(user.email.toLowerCase()) : false;
-  const isPublicEditor = isPublicResumeMode && user ? allowedEmails.includes(user.email.toLowerCase()) : false;
+  const isPublicEditor = isPublicResumeMode && user ? editAllowedEmails.includes(user.email.toLowerCase()) : false;
   const hasAppAccess = user ? (isPublicResumeMode ? isPublicEditor : isAdmin) : false;
   const [isEditMode, setIsEditMode] = useState(true);
   const [companyForm, setCompanyForm] = useState<CompanyFormValues>(emptyCompanyForm);
@@ -450,7 +450,7 @@ export default function App() {
       <LoginPage
         clientId={googleClientId}
         isReady={isReady}
-        error="허용된 계정이 아닙니다. totoriverce@gmail.com 만 사용할 수 있습니다."
+        error="totoriverce@gmail.com만 로그인 가능합니다."
         onLogin={signIn}
       />
     );
