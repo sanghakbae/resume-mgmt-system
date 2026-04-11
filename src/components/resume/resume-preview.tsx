@@ -287,7 +287,7 @@ export function CareerDashboard({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4" data-export-kpis>
+        <div className="mt-4 grid grid-cols-4 gap-2 md:gap-3" data-export-kpis>
           <DashboardStat icon={BriefcaseBusiness} label="총 프로젝트" value={`${totalProjects}건`} tone="from-slate-900 via-slate-700 to-slate-500" />
           <DashboardStat icon={Sparkles} label="활성 분야" value={`${activeCategories}개`} tone="from-cyan-700 via-sky-600 to-blue-500" />
           <DashboardStat
@@ -383,12 +383,12 @@ function DashboardStat({
   tone: string;
 }) {
   return (
-    <div className={`rounded-[14px] border border-white/20 bg-gradient-to-br ${tone} bg-opacity-70 p-4 text-white shadow-[0_14px_36px_rgba(15,23,42,0.12)]`}>
-      <div className="flex items-center gap-2 text-white/80">
-        <Icon className="h-4 w-4" />
-        <span className="text-[12px] leading-4">{label}</span>
+    <div className={`min-w-0 rounded-[14px] border border-white/20 bg-gradient-to-br ${tone} bg-opacity-70 p-2 text-white shadow-[0_14px_36px_rgba(15,23,42,0.12)] sm:p-4`}>
+      <div className="flex items-center gap-1 text-white/80 sm:gap-2">
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <span className="truncate text-[9px] leading-4 sm:text-[12px]">{label}</span>
       </div>
-      <p className="mt-2 text-lg font-semibold leading-6 text-white">{value}</p>
+      <p className="mt-1 truncate text-[10px] font-semibold leading-5 text-white sm:mt-2 sm:text-lg sm:leading-6">{value}</p>
     </div>
   );
 }

@@ -141,7 +141,8 @@ export default function App() {
     canSave: canSaveWorkspace,
   });
   const [workspaceSummaries, setWorkspaceSummaries] = useState<WorkspaceSummary[]>([]);
-  const headerButtonClass = "min-h-7 px-2.5 py-0.5 text-[11px] leading-4 md:text-[11px]";
+  const headerButtonClass = "min-h-7 px-2.5 py-0.5 text-[10px] leading-4 md:text-[11px]";
+  const mobileHeaderChipClass = "h-7 shrink-0 whitespace-nowrap rounded-[9px] border px-2 py-0 text-[10px] leading-4";
 
   useEffect(() => {
     if (isPublicResumeMode) return;
@@ -457,60 +458,60 @@ export default function App() {
               <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">이력서 관리 시스템</h1>
             </div>
 
-            <div className="grid w-full gap-1 md:flex md:w-auto md:flex-wrap">
+            <div className="flex w-full flex-nowrap items-center gap-1 overflow-x-auto pb-1 md:w-auto md:flex-wrap md:overflow-visible md:pb-0">
               {!isPublicResumeMode ? (
                 <>
                   {user ? (
-                    <div className="flex w-full items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-1 md:w-auto">
-                      {user.picture ? <img src={user.picture} alt={user.name} className="h-8 w-8 rounded-full" referrerPolicy="no-referrer" /> : null}
+                    <div className={`${mobileHeaderChipClass} flex min-w-[140px] items-center gap-1.5 border-slate-200 bg-slate-50 text-slate-600 md:h-auto md:w-auto md:min-w-0 md:px-2.5 md:py-1 md:text-[12px]`}>
+                      {user.picture ? <img src={user.picture} alt={user.name} className="h-5 w-5 rounded-full md:h-8 md:w-8" referrerPolicy="no-referrer" /> : null}
                       <div className="min-w-0 text-left">
-                        <p className="truncate text-[13px] font-medium leading-4 text-slate-900">{user.name}</p>
-                        <p className="truncate text-[12px] leading-3 text-slate-500">{user.email}</p>
+                        <p className="truncate text-[10px] font-medium leading-4 text-slate-900 md:text-[13px]">{user.name}</p>
+                        <p className="truncate text-[9px] leading-3 text-slate-500 md:text-[12px]">{user.email}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex w-full items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12px] font-medium leading-4 text-slate-600 md:w-auto">
-                      <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <div className={`${mobileHeaderChipClass} flex items-center gap-1 border-slate-200 bg-slate-50 font-medium text-slate-600 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 md:h-4 md:w-4" />
                       로컬 편집 모드
                     </div>
                   )}
                   {isAdmin ? (
-                    <div className="flex w-full items-center gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] font-medium leading-4 text-emerald-700 md:w-auto">
-                      <ShieldCheck className="h-4 w-4" />
+                    <div className={`${mobileHeaderChipClass} flex items-center gap-1 border-emerald-200 bg-emerald-50 font-medium text-emerald-700 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
+                      <ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" />
                       관리자
                     </div>
                   ) : null}
                 </>
               ) : (
                 <>
-                  <div className="flex w-full min-w-[180px] items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12px] font-medium leading-4 text-slate-600 md:w-auto">
+                  <div className={`${mobileHeaderChipClass} min-w-[110px] items-center gap-1 border-slate-200 bg-slate-50 font-medium text-slate-600 md:h-auto md:min-w-[180px] md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
                     방문 횟수: {visitCount}
                   </div>
                   {user ? (
-                    <div className="flex w-full items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-1 md:w-auto">
-                      {user.picture ? <img src={user.picture} alt={user.name} className="h-8 w-8 rounded-full" referrerPolicy="no-referrer" /> : null}
+                    <div className={`${mobileHeaderChipClass} flex min-w-[120px] items-center gap-1.5 border-slate-200 bg-slate-50 text-slate-600 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
+                      {user.picture ? <img src={user.picture} alt={user.name} className="h-5 w-5 rounded-full md:h-8 md:w-8" referrerPolicy="no-referrer" /> : null}
                       <div className="min-w-0 text-left">
-                        <p className="truncate text-[13px] font-medium leading-4 text-slate-900">{user.name}</p>
+                        <p className="truncate text-[10px] font-medium leading-4 text-slate-900 md:text-[13px]">{user.name}</p>
                       </div>
                     </div>
                   ) : null}
                   {!user && googleClientId ? (
-                    <div className="w-full min-w-[220px] md:w-[280px]">
+                    <div className="min-w-[220px] shrink-0 md:w-[280px]">
                       <GoogleSignInButton clientId={googleClientId} disabled={!isReady} onSuccess={signIn} />
                     </div>
                   ) : null}
                   {!user && !googleClientId ? (
-                    <div className="flex w-full items-center rounded-[10px] border border-amber-200 bg-amber-50 px-2.5 py-1 text-[12px] leading-4 text-amber-700 md:w-auto">
+                    <div className={`${mobileHeaderChipClass} flex items-center border-amber-200 bg-amber-50 text-[10px] leading-4 text-amber-700 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
                       현재 배포본에 Google 로그인 설정이 연결되지 않아 편집 로그인을 사용할 수 없습니다.
                     </div>
                   ) : null}
                   {authError && !user ? (
-                    <div className="flex w-full items-center rounded-[10px] border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] leading-4 text-rose-700 md:w-auto">
+                    <div className={`${mobileHeaderChipClass} flex items-center border-rose-200 bg-rose-50 text-[10px] leading-4 text-rose-700 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
                       {authError}
                     </div>
                   ) : null}
                   {assetUploadError ? (
-                    <div className="flex w-full items-center rounded-[10px] border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] leading-4 text-rose-700 md:w-auto">
+                    <div className={`${mobileHeaderChipClass} flex items-center border-rose-200 bg-rose-50 text-[10px] leading-4 text-rose-700 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
                       {assetUploadError}
                     </div>
                   ) : null}
@@ -519,14 +520,14 @@ export default function App() {
               {canEdit ? (
                 <>
                   <Button
-                    className={`${headerButtonClass} ${isEditMode ? "w-full border border-slate-900 bg-slate-900 text-white md:w-auto" : "w-full border border-slate-200 bg-white text-slate-700 md:w-auto"}`}
+                    className={`${headerButtonClass} shrink-0 whitespace-nowrap ${isEditMode ? "border border-slate-900 bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
                     onClick={() => setIsEditMode(true)}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
                     편집 모드
                   </Button>
                   <Button
-                    className={`${headerButtonClass} ${!isEditMode ? "w-full border border-slate-900 bg-slate-900 text-white md:w-auto" : "w-full border border-slate-200 bg-white text-slate-700 md:w-auto"}`}
+                    className={`${headerButtonClass} shrink-0 whitespace-nowrap ${!isEditMode ? "border border-slate-900 bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
                     onClick={() => {
                       setSelectedEditorSection("dashboard");
                       setIsEditMode(false);
@@ -536,7 +537,7 @@ export default function App() {
                     공개 보기
                   </Button>
                   {!isPublicResumeMode ? (
-                    <Button className={`${headerButtonClass} w-full border border-slate-200 bg-white text-slate-700 md:w-auto`} onClick={restoreSampleData}>
+                    <Button className={`${headerButtonClass} shrink-0 whitespace-nowrap border border-slate-200 bg-white text-slate-700`} onClick={restoreSampleData}>
                       <RotateCcw className="mr-2 h-4 w-4" />
                       샘플 복원
                     </Button>
@@ -544,7 +545,7 @@ export default function App() {
                 </>
               ) : null}
               {user ? (
-                <Button className={`${headerButtonClass} w-full border border-slate-200 bg-white text-slate-700 md:w-auto`} onClick={signOut}>
+                <Button className={`${headerButtonClass} shrink-0 whitespace-nowrap border border-slate-200 bg-white text-slate-700`} onClick={signOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   {isPublicResumeMode ? "편집 로그아웃" : "로그아웃"}
                 </Button>
