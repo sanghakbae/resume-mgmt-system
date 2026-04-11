@@ -104,6 +104,10 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
 
       const sessionUser = data.session?.user;
       if (!sessionUser?.email) {
+        if (isSupabaseConfigured) {
+          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          setUser(null);
+        }
         return;
       }
 
@@ -123,6 +127,10 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
       const sessionUser = session?.user;
 
       if (!sessionUser?.email) {
+        if (isSupabaseConfigured) {
+          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          setUser(null);
+        }
         return;
       }
 
@@ -164,8 +172,10 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         });
 
         if (signInError) {
-          // Keep local login available for development even if Supabase auth is not fully configured.
-          console.warn("Supabase Google sign-in failed; continuing with local session.", signInError);
+          setError("Supabase 인증에 실패했습니다. Google/Supabase 연동을 확인하세요.");
+          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          setUser(null);
+          return;
         }
       }
 

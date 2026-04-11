@@ -393,6 +393,9 @@ export default function App() {
       const preparedFile = await prepareProfilePhoto(file);
 
       if (!isSupabaseConfigured) {
+        if (isPublicResumeMode) {
+          throw new Error("Supabase 저장소가 설정되지 않아 사진을 저장할 수 없습니다.");
+        }
         const dataUrl = await readFileAsDataUrl(preparedFile);
         setProfile((prev) => ({ ...prev, photo: dataUrl, photoPositionX: 50, photoPositionY: 50, photoScale: 1.08 }));
         return;
@@ -400,8 +403,8 @@ export default function App() {
 
       const publicUrl = await uploadResumeAsset(preparedFile, activeOwnerId, "profile");
       setProfile((prev) => ({ ...prev, photo: publicUrl, photoPositionX: 50, photoPositionY: 50, photoScale: 1.08 }));
-    } catch {
-      setAssetUploadError("프로필 사진을 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
+    } catch (uploadError) {
+      setAssetUploadError(uploadError instanceof Error ? uploadError.message : "프로필 사진을 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
       setIsUploadingProfilePhoto(false);
     }
@@ -413,6 +416,9 @@ export default function App() {
 
     try {
       if (!isSupabaseConfigured) {
+        if (isPublicResumeMode) {
+          throw new Error("Supabase 저장소가 설정되지 않아 이미지를 저장할 수 없습니다.");
+        }
         const dataUrl = await readFileAsDataUrl(file);
         setForm((prev) => ({ ...prev, image: dataUrl }));
         return;
@@ -420,8 +426,8 @@ export default function App() {
 
       const publicUrl = await uploadResumeAsset(file, activeOwnerId, "experience");
       setForm((prev) => ({ ...prev, image: publicUrl }));
-    } catch {
-      setAssetUploadError("업무 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
+    } catch (uploadError) {
+      setAssetUploadError(uploadError instanceof Error ? uploadError.message : "업무 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
       setIsUploadingExperienceImage(false);
     }

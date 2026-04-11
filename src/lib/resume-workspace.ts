@@ -213,7 +213,11 @@ export async function saveWorkspace(workspace: ResumeWorkspace) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const editorEmail = user?.email ?? workspace.editorEmail ?? null;
+    const editorEmail = user?.email?.trim().toLowerCase() ?? null;
+
+    if (!editorEmail) {
+      throw new Error("Supabase 로그인 세션이 없어 저장할 수 없습니다.");
+    }
 
     const { error } = await supabase.from("resume_workspaces").upsert(
       {

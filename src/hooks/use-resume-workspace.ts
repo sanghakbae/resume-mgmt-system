@@ -83,8 +83,8 @@ export function useResumeWorkspace({
           setError(null);
           setShowSavedNotice(true);
         })
-        .catch(() => {
-          setError("이력서 데이터를 저장하지 못했습니다.");
+        .catch((saveError) => {
+          setError(saveError instanceof Error ? saveError.message : "이력서 데이터를 저장하지 못했습니다.");
         })
         .finally(() => {
           setIsSaving(false);
@@ -135,8 +135,8 @@ export function useResumeWorkspace({
       setUpdatedAt(workspace.updatedAt);
       setError(null);
       setShowSavedNotice(true);
-    } catch {
-      setError("이력서 데이터를 저장하지 못했습니다.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "이력서 데이터를 저장하지 못했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -156,8 +156,8 @@ export function useResumeWorkspace({
         await saveWorkspace(workspace);
         setError(null);
         setShowSavedNotice(true);
-      } catch {
-        setError("이력서 데이터를 저장하지 못했습니다.");
+      } catch (saveError) {
+        setError(saveError instanceof Error ? saveError.message : "이력서 데이터를 저장하지 못했습니다.");
       } finally {
         setIsSaving(false);
       }
