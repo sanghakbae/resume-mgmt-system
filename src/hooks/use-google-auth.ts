@@ -128,7 +128,6 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
       const normalizedEmail = nextUser.email.toLowerCase();
 
       if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
-        window.alert(deniedMessage);
         setError(deniedMessage);
         if (isSupabaseConfigured && supabase) {
           await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);

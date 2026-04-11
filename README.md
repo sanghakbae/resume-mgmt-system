@@ -1,15 +1,89 @@
 # Resume Management System
 
-배상학 이력서를 공개용 레주메 페이지와 로컬 편집 화면으로 함께 관리하는 Vite + React 프로젝트입니다.
+배상학 이력서를 한 곳에서 관리하는 Vite + React 기반 커리어 관리 시스템입니다.  
+공개 보기, 편집 모드, 회사/수행 업무 관리, 방문 로그, 폰트 설정, 사진 보정이 모두 포함됩니다.
+
+## 한눈에 보기
+
+- 공개 이력서 화면과 편집 화면을 같은 데이터로 연결
+- Google 로그인 기반 접근 제어
+- 허용된 계정만 편집 가능
+- 사진 업로드 후 실제 출력 경계 확인 및 위치 보정
+- 회사 추가 / 수행 업무 추가를 좌우 분할로 관리
+- 방문 로그를 테이블로 확인
+- 전역 폰트 설정을 브라우저에 저장
 
 ## 주요 기능
 
-- 공개 단일 이력서 페이지
-- 회사 중심 경력 정리
-- 수행 업무 이미지 업로드
-- PDF / HTML 출력
-- Google 로그인 기반 편집 잠금 해제
-- GitHub Pages 배포용 워크플로우
+### 이력서 편집
+
+- 기본 정보 편집
+  - 이름
+  - 직무 / 역할
+  - 소개
+  - 사진
+  - 학력
+  - 경력
+  - 전문분야
+  - 자격 사항
+  - 병역 사항
+  - 산업 군
+- 사진 업로드 후 좌우 / 상하 / 확대 슬라이더로 보정
+- 사진 미리보기에서 실제 출력 경계를 표시
+- 입력 내용은 작업공간에 자동 저장
+
+### 회사 관리
+
+- 회사 추가 / 수정 / 삭제
+- 왼쪽 입력 폼, 오른쪽 등록된 회사 목록의 좌우 배치
+- 회사 요약과 핵심 업무를 함께 관리
+
+### 수행 업무 관리
+
+- 수행 업무 추가 / 수정 / 삭제
+- 프로젝트 URL 입력 시 링크 썸네일 카드 표시
+- 태그 자동 추출은 실제 근거가 있을 때만 반영
+- 공개 보기에서 회사별 대표 프로젝트 카드로 묶어 표시
+
+### 공개 보기
+
+- 공개 이력서 상단 프로필 카드
+- 경력 대시보드
+- 회사별 대표 프로젝트 목록
+- 핵심 역량 분포
+- 역할 변화 타임라인
+- 대표 성과 하이라이트
+- 방문 회수 표시
+
+### 방문 로그
+
+- 메뉴에서 `수행 업무 추가` 아래에 `방문 로그` 제공
+- 브라우저 로컬 저장소 기준 방문 기록을 테이블로 확인
+- 열 구성
+  - 방문 시각
+  - 모드
+  - 사용자
+  - 대상
+  - IP 자리
+- IP는 현재 서버 연동용 자리만 있고, 실제 값은 백엔드/프록시 연동 시 주입해야 함
+
+### 설정
+
+- `방문 로그` 아래에 `설정` 메뉴 제공
+- 전역 폰트 선택 가능
+  - KorPub 돋움체
+  - Pretendard
+  - Noto Sans KR
+  - 맑은 고딕
+  - Apple SD Gothic Neo
+- 선택값은 브라우저에 저장
+
+### 접근 제어
+
+- Google 로그인 사용
+- 허용된 이메일만 로그인 및 편집 가능
+- 허용되지 않은 계정은 로그인 후 중앙 메시지로 차단
+- 편집/관리 권한은 환경 변수로 제어
 
 ## 로컬 실행
 
@@ -18,77 +92,87 @@ npm install
 npm run dev
 ```
 
-기본적으로 로컬에서는 편집 모드로 사용할 수 있습니다.
+Vite 기본 실행만으로 충분합니다.  
+필요하면 `--host` 또는 `--port`를 추가해서 별도 포트로 띄울 수 있습니다.
+
+## 빌드
+
+```bash
+npm run build
+```
 
 ## 환경 변수
 
-`.env.example`을 참고해서 `.env`를 만듭니다.
+`.env`를 만들어 아래 값을 설정합니다.
 
 ```env
 VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
 VITE_ENABLE_SUPABASE=false
-VITE_EDITOR_EMAILS=your-google-email@example.com
 VITE_PUBLIC_RESUME_MODE=false
+VITE_ADMIN_EMAILS=allowed-admin@example.com
+VITE_EDITOR_EMAILS=allowed-editor@example.com
 ```
 
-### 주요 값
+### 변수 설명
 
-- `VITE_PUBLIC_RESUME_MODE=true`
-  - 공개 배포 모드
-  - 접속한 누구나 같은 이력서를 봄
-- `VITE_PUBLIC_RESUME_MODE=false`
-  - 로컬 편집 모드
-- `VITE_EDITOR_EMAILS`
-  - 공개 배포본에서 편집 권한을 열 수 있는 Google 계정 이메일 목록
+- `VITE_GOOGLE_CLIENT_ID`
+  - Google One Tap / OAuth 로그인에 사용
 - `VITE_ENABLE_SUPABASE`
-  - `true`일 때만 Supabase 저장소를 사용
-  - 로컬 개발에서는 `false`로 두면 브라우저 `localStorage` 작업공간을 사용
+  - `true`일 때 Supabase 세션과 저장소를 사용
+  - `false`일 때는 브라우저 로컬 작업공간을 사용
+- `VITE_PUBLIC_RESUME_MODE`
+  - `true`면 공개 보기 중심 모드
+  - `false`면 일반 편집 모드
+- `VITE_ADMIN_EMAILS`
+  - 로컬 편집 모드에서 허용할 관리자 이메일 목록
+- `VITE_EDITOR_EMAILS`
+  - 공개 모드에서 편집을 허용할 이메일 목록
 
-## 공개 배포 모드
+## 권한 동작
 
-GitHub Pages 배포 시에는 아래처럼 설정하는 것을 기준으로 합니다.
+- 로컬 편집 모드
+  - `VITE_ADMIN_EMAILS`에 있는 계정만 로그인 및 편집 가능
+- 공개 모드
+  - `VITE_EDITOR_EMAILS`에 있는 계정만 편집 가능
+  - 그 외 계정은 읽기 전용
+- 허용되지 않은 계정으로 로그인하면 중앙 메시지로 차단
 
-```env
-VITE_PUBLIC_RESUME_MODE=true
-VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
-VITE_EDITOR_EMAILS=your-google-email@example.com
-```
+## 현재 UI 구조
 
-이 경우:
+- 상단 헤더
+  - 로그인 상태
+  - 편집 / 공개 보기 전환
+  - 샘플 복원
+  - 로그아웃
+- 왼쪽 사이드바
+  - 대시보드
+  - 기본 정보
+  - 회사 추가
+  - 수행 업무 추가
+  - 방문 로그
+  - 설정
+- 오른쪽 본문
+  - 선택한 섹션만 렌더링
 
-- 일반 방문자: 공개 이력서 읽기 전용
-- 지정한 Google 계정으로 로그인한 본인: 현재 브라우저에서 편집 가능
-
-주의:
-
-- GitHub Pages는 정적 배포이므로, 로그인 후 수정 내용은 모든 방문자에게 실시간으로 공유되지 않습니다.
-- 전역 반영형 편집 시스템이 필요하면 별도 백엔드 또는 저장소 연동이 필요합니다.
-
-## GitHub Pages 배포
-
-`.github/workflows/deploy.yml`이 포함되어 있습니다.
-
-필수 설정:
-
-1. 저장소 `Settings`
-2. `Pages`
-3. `Build and deployment` > `Source`를 `GitHub Actions`로 설정
-4. `Settings` > `Actions` > `General`
-5. `Workflow permissions`를 `Read and write permissions`로 설정
-
-그 다음 `main` 브랜치에 푸시하면 자동 배포됩니다.
-
-## 현재 구조
+## 프로젝트 구조
 
 - `src/App.tsx`
-  - 공개/편집 모드 분기, 출력 기능, 상단 액션
+  - 화면 라우팅, 로그인 처리, 권한 제어, 방문 로그, 폰트 설정
+- `src/components/auth`
+  - 로그인 화면과 Google 로그인 버튼
 - `src/components/resume`
-  - 프로필, 회사, 수행 업무 폼과 공개 이력서 UI
-- `src/hooks/use-resume-workspace.ts`
-  - 작업공간 로드/저장
+  - 프로필, 회사, 수행 업무, 공개 보기, 대시보드 UI
+- `src/hooks`
+  - Google Auth, 작업공간 저장 로직
+- `src/lib`
+  - 사진 보정, 요약 생성, 태그 추출, Supabase 연동
 - `src/data/resume.ts`
-  - 기본 이력서 데이터
+  - 기본 이력서 데이터와 카드 메타정보
+- `src/types/resume.ts`
+  - 주요 타입 정의
 
 ## 참고
 
-현재 프로젝트는 배상학 이력서를 기준 데이터로 사용합니다.
+- PDF / HTML 내보내기 버튼은 현재 제거되어 있습니다.
+- 인쇄 스타일은 남아 있지만, 전용 export 버튼은 없습니다.
+- 이 프로젝트는 배상학 이력서를 기준 데이터로 사용합니다.

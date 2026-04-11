@@ -90,12 +90,13 @@ export default function App() {
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
+  const allowedEmails = [...new Set([...adminEmails, ...editorEmails])];
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth({
-    allowedEmails: adminEmails,
+    allowedEmails,
     deniedMessage: "관리자 계정만 로그인 가능합니다.",
   });
   const isAdmin = !isPublicResumeMode && user ? adminEmails.includes(user.email.toLowerCase()) : false;
-  const isPublicEditor = isPublicResumeMode && user ? editorEmails.includes(user.email.toLowerCase()) : false;
+  const isPublicEditor = isPublicResumeMode && user ? allowedEmails.includes(user.email.toLowerCase()) : false;
   const hasAppAccess = user ? (isPublicResumeMode ? isPublicEditor : isAdmin) : false;
   const [isEditMode, setIsEditMode] = useState(true);
   const [companyForm, setCompanyForm] = useState<CompanyFormValues>(emptyCompanyForm);
