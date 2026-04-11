@@ -11,11 +11,11 @@ function readStoredSession(): GoogleUser | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
 
     const parsed = normalizeGoogleUser(JSON.parse(raw) as GoogleUser);
-    window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(parsed));
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(parsed));
     return parsed;
   } catch {
     return null;
@@ -132,7 +132,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         if (isSupabaseConfigured && supabase) {
           await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
         }
-        window.localStorage.removeItem(SESSION_STORAGE_KEY);
+        window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
         setUser(null);
         return;
       }
@@ -149,7 +149,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         }
       }
 
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
       setError(null);
     } catch {
@@ -158,7 +158,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
   };
 
   const signOut = async () => {
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
     setUser(null);
 
     if (isSupabaseConfigured && supabase) {

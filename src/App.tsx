@@ -27,6 +27,7 @@ import type {
   WorkspaceSummary,
 } from "@/types/resume";
 
+const DEFAULT_GOOGLE_CLIENT_ID = "924920443826-lo1msns5cgvnh7u1714ikcqj2fq4srji.apps.googleusercontent.com";
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
   {
@@ -79,7 +80,7 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
 }
 
 export default function App() {
-  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "").trim();
+  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
   const adminEmails = ((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? "")
     .split(",")
