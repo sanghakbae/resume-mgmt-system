@@ -29,6 +29,7 @@ import type {
 
 const DEFAULT_GOOGLE_CLIENT_ID = "924920443826-lo1msns5cgvnh7u1714ikcqj2fq4srji.apps.googleusercontent.com";
 const PRIMARY_ACCOUNT_EMAIL = "totoriverce@gmail.com";
+const PRIMARY_ACCOUNT_WORKSPACE_ID = PRIMARY_ACCOUNT_EMAIL;
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
   {
@@ -106,7 +107,7 @@ export default function App() {
   const [visitCount, setVisitCount] = useState(0);
   const [visitLogs, setVisitLogs] = useState<VisitLogItem[]>([]);
   const [fontFamily, setFontFamily] = useState<string>(() => getSavedFontFamily());
-  const activeOwnerId = isPublicResumeMode ? user?.sub ?? "public-resume" : isAdmin ? selectedOwnerId ?? user?.sub ?? "" : user?.sub ?? "";
+  const activeOwnerId = isPublicResumeMode ? PRIMARY_ACCOUNT_WORKSPACE_ID : isAdmin ? selectedOwnerId ?? PRIMARY_ACCOUNT_WORKSPACE_ID : PRIMARY_ACCOUNT_WORKSPACE_ID;
   const effectiveIsEditMode = isPublicResumeMode ? isPublicEditor && isEditMode : isEditMode;
   const canSaveWorkspace = !isPublicResumeMode || isPublicEditor;
   const {
@@ -126,6 +127,7 @@ export default function App() {
     listWorkspaces,
   } = useResumeWorkspace({
     ownerId: activeOwnerId,
+    fallbackOwnerIds: user ? [user.sub, "public-resume"] : ["public-resume"],
     defaultProfile,
     defaultCompanies: defaultCompanyProfiles,
     defaultExperiences,
@@ -137,7 +139,7 @@ export default function App() {
   useEffect(() => {
     if (isPublicResumeMode) return;
     if (!user) return;
-    setSelectedOwnerId(user.sub);
+    setSelectedOwnerId(PRIMARY_ACCOUNT_WORKSPACE_ID);
   }, [isPublicResumeMode, user]);
 
   useEffect(() => {
@@ -606,7 +608,7 @@ export default function App() {
                     </Card>
                     {isAdmin ? (
                       <AdminWorkspacePanel
-                        currentUserId={user.sub}
+                        currentUserId={PRIMARY_ACCOUNT_WORKSPACE_ID}
                         activeOwnerId={activeOwnerId}
                         workspaces={workspaceSummaries}
                         onSelect={setSelectedOwnerId}

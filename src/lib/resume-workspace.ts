@@ -137,58 +137,72 @@ export function getStorageMode() {
   return getApiBaseUrl() ? "api" : "local";
 }
 
-export async function loadWorkspace(ownerId: string, defaultProfile: Profile, defaultCompanies: CompanyProfile[], defaultExperiences: ExperienceItem[]) {
+export async function loadWorkspace(
+  ownerId: string,
+  defaultProfile: Profile,
+  defaultCompanies: CompanyProfile[],
+  defaultExperiences: ExperienceItem[],
+  fallbackOwnerIds: string[] = [],
+) {
+  const candidateOwnerIds = [ownerId, ...fallbackOwnerIds.map((value) => value.trim()).filter(Boolean).filter((value, index, array) => array.indexOf(value) === index)];
+
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("resume_workspaces")
-      .select("owner_id, editor_email, profile, companies, experiences, updated_at")
-      .eq("owner_id", ownerId)
-      .maybeSingle();
+    for (const candidateOwnerId of candidateOwnerIds) {
+      const { data, error } = await supabase
+        .from("resume_workspaces")
+        .select("owner_id, editor_email, profile, companies, experiences, updated_at")
+        .eq("owner_id", candidateOwnerId)
+        .maybeSingle();
 
-    if (error) {
-      throw error;
-    }
-
-    if (!data) {
-      const localWorkspace = loadLocalWorkspace(ownerId);
-      if (localWorkspace) {
-        return mergeWorkspaceWithDefaults(localWorkspace, defaultProfile, defaultCompanies, defaultExperiences);
+      if (error) {
+        throw error;
       }
 
-      return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
+      if (data) {
+        return mergeWorkspaceWithDefaults({
+          ownerId: data.owner_id,
+          editorEmail: data.editor_email ?? null,
+          profile: (data.profile as Profile) ?? defaultProfile,
+          companies: (data.companies as CompanyProfile[]) ?? defaultCompanies,
+          experiences: (data.experiences as ExperienceItem[]) ?? defaultExperiences,
+          updatedAt: data.updated_at ?? new Date().toISOString(),
+        }, defaultProfile, defaultCompanies, defaultExperiences);
+      }
     }
 
-    return mergeWorkspaceWithDefaults({
-      ownerId: data.owner_id,
-      editorEmail: data.editor_email ?? null,
-      profile: (data.profile as Profile) ?? defaultProfile,
-      companies: (data.companies as CompanyProfile[]) ?? defaultCompanies,
-      experiences: (data.experiences as ExperienceItem[]) ?? defaultExperiences,
-      updatedAt: data.updated_at ?? new Date().toISOString(),
-    }, defaultProfile, defaultCompanies, defaultExperiences);
+    return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
   }
 
   const apiBaseUrl = getApiBaseUrl();
 
   if (apiBaseUrl) {
-    const response = await fetch(`${apiBaseUrl}/resume/${encodeURIComponent(ownerId)}`);
+    for (const candidateOwnerId of candidateOwnerIds) {
+      const response = await fetch(`${apiBaseUrl}/resume/${encodeURIComponent(candidateOwnerId)}`);
 
-    if (response.status === 404) {
-      return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
+      if (response.status === 404) {
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to load workspace");
+      }
+
+      const workspace = (await response.json()) as ResumeWorkspace;
+      return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
     }
 
-    if (!response.ok) {
-      throw new Error("Failed to load workspace");
-    }
-
-    const workspace = (await response.json()) as ResumeWorkspace;
-    return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
+    return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
   }
 
   try {
-    const workspace = loadLocalWorkspace(ownerId);
-    if (!workspace) return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
-    return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
+    for (const candidateOwnerId of candidateOwnerIds) {
+      const workspace = loadLocalWorkspace(candidateOwnerId);
+      if (workspace) {
+        return mergeWorkspaceWithDefaults(workspace, defaultProfile, defaultCompanies, defaultExperiences);
+      }
+    }
+
+    return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
   } catch {
     return createWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences);
   }

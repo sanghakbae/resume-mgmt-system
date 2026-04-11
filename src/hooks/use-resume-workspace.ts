@@ -4,13 +4,21 @@ import type { CompanyProfile, ExperienceItem, Profile, ResumeWorkspace, Workspac
 
 type UseResumeWorkspaceArgs = {
   ownerId: string;
+  fallbackOwnerIds?: string[];
   defaultProfile: Profile;
   defaultCompanies: CompanyProfile[];
   defaultExperiences: ExperienceItem[];
   canSave?: boolean;
 };
 
-export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, defaultExperiences, canSave = true }: UseResumeWorkspaceArgs) {
+export function useResumeWorkspace({
+  ownerId,
+  fallbackOwnerIds = [],
+  defaultProfile,
+  defaultCompanies,
+  defaultExperiences,
+  canSave = true,
+}: UseResumeWorkspaceArgs) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [companies, setCompanies] = useState<CompanyProfile[]>(defaultCompanies);
   const [experiences, setExperiences] = useState<ExperienceItem[]>(defaultExperiences);
@@ -30,7 +38,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
     let active = true;
     setIsLoading(true);
 
-    loadWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences)
+    loadWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences, fallbackOwnerIds)
       .then((workspace) => {
         if (!active) return;
         setProfile(workspace.profile);
@@ -51,7 +59,7 @@ export function useResumeWorkspace({ ownerId, defaultProfile, defaultCompanies, 
     return () => {
       active = false;
     };
-  }, [defaultCompanies, defaultExperiences, defaultProfile, ownerId]);
+  }, [defaultCompanies, defaultExperiences, defaultProfile, fallbackOwnerIds, ownerId]);
 
   useEffect(() => {
     if (!ownerId || isLoading) return;
