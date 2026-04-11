@@ -1,30 +1,30 @@
-drop policy if exists "authenticated users can create their own resume workspace" on public.resume_workspaces;
-drop policy if exists "authenticated editor can update resume workspace" on public.resume_workspaces;
-drop policy if exists "authenticated upload resume assets" on storage.objects;
-drop policy if exists "authenticated update resume assets" on storage.objects;
+drop policy if exists "public create resume workspace" on public.resume_workspaces;
+drop policy if exists "public update resume workspace" on public.resume_workspaces;
+drop policy if exists "public upload resume assets" on storage.objects;
+drop policy if exists "public update resume assets" on storage.objects;
 
-create policy "public create resume workspace"
+create policy "authenticated users can create their own resume workspace"
 on public.resume_workspaces
 for insert
-to public
-with check (true);
+to authenticated
+with check ((select auth.jwt()->>'email') = editor_email);
 
-create policy "public update resume workspace"
+create policy "authenticated editor can update resume workspace"
 on public.resume_workspaces
 for update
-to public
-using (true)
-with check (true);
+to authenticated
+using ((select auth.jwt()->>'email') = editor_email)
+with check ((select auth.jwt()->>'email') = editor_email);
 
-create policy "public upload resume assets"
+create policy "authenticated upload resume assets"
 on storage.objects
 for insert
-to public
+to authenticated
 with check (bucket_id = 'resume-assets');
 
-create policy "public update resume assets"
+create policy "authenticated update resume assets"
 on storage.objects
 for update
-to public
+to authenticated
 using (bucket_id = 'resume-assets')
 with check (bucket_id = 'resume-assets');

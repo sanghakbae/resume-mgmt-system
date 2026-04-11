@@ -7,7 +7,7 @@ import type { GoogleUser } from "@/types/resume";
 const SESSION_STORAGE_KEY = "resume.auth.session";
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
-function readStoredSession(): GoogleUser | null {
+function readStoredSession(allowedEmails: string[]): GoogleUser | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -15,6 +15,11 @@ function readStoredSession(): GoogleUser | null {
     if (!raw) return null;
 
     const parsed = normalizeGoogleUser(JSON.parse(raw) as GoogleUser);
+    if (allowedEmails.length > 0 && !allowedEmails.includes(parsed.email.toLowerCase())) {
+      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      return null;
+    }
+
     window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(parsed));
     return parsed;
   } catch {
@@ -51,9 +56,17 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
   const allowedEmails = options?.allowedEmails?.map((value) => value.toLowerCase()) ?? [];
   const deniedMessage = options?.deniedMessage ?? "관리자 계정만 로그인 가능합니다.";
   const enabled = options?.enabled ?? true;
-  const [user, setUser] = useState<GoogleUser | null>(() => readStoredSession());
+  const [user, setUser] = useState<GoogleUser | null>(() => readStoredSession(allowedEmails));
   const [isReady, setIsReady] = useState(!enabled);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (allowedEmails.length === 0 || !user) return;
+    if (allowedEmails.includes(user.email.toLowerCase())) return;
+
+    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    setUser(null);
+  }, [allowedEmails, user]);
 
   useEffect(() => {
     if (!enabled) {

@@ -28,8 +28,9 @@
 - 누구나 공개 이력서를 열람 가능
 - Google 로그인은 가능하지만, 편집은 허용된 계정만 가능
 - 편집 허용 계정은 `VITE_EDITOR_EMAILS`로 제어
-- 현재 기본 허용 계정은 `totoriverce@gmail.com`
+- 기본 예시는 `totoriverce@gmail.com`
 - 비허용 계정은 공개 화면만 볼 수 있고, 편집 버튼과 저장 기능은 비활성화
+- Supabase를 켠 경우에도 저장 정책은 로그인한 이메일과 `editor_email` 일치 여부로 다시 검증
 
 ## 주요 기능
 
@@ -143,6 +144,7 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 - `VITE_EDITOR_EMAILS`
   - 공개 모드에서 편집을 허용할 이메일 목록
   - 편집과 저장 권한의 기준
+  - Supabase를 쓸 때도 로그인한 이메일과 일치해야 저장 가능
 - `VITE_SUPABASE_URL`
   - Supabase를 사용할 때 프로젝트 URL
 - `VITE_SUPABASE_ANON_KEY`
