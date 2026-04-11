@@ -71,19 +71,19 @@ export function ProfileForm({ ownerId, profile, isUploading = false, onChange, o
           <p className="mt-1 text-[12px] leading-4 text-slate-500">경력, 산업 군, 수행 업무, 태그를 기준으로 자동 생성됩니다.</p>
         </FormField>
         <div className="grid gap-3 lg:grid-cols-[288px_minmax(0,1fr)] lg:items-start">
-          <FormField label="이력서 사진" className="h-fit self-start rounded-[16px] border border-slate-200 bg-slate-50/60 p-2.5 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset]">
+          <FormField label="명함사진" className="h-fit self-start rounded-[16px] border border-slate-200 bg-slate-50/60 p-2.5 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset]">
             <div className="space-y-2">
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-[13px] font-medium leading-5 text-slate-700">
                 <ImagePlus className="h-4 w-4" />
                 {isUploading ? "사진 업로드 중" : "사진 업로드"}
                 <input type="file" accept="image/*,.gif" className="hidden" onChange={(event) => void handlePhotoChange(event)} disabled={isUploading} />
               </label>
-              <p className="text-[12px] leading-4 text-slate-500">PNG, JPG, GIF를 지원하며 공개 이력서 상단 프로필에 노출됩니다.</p>
+              <p className="text-[12px] leading-4 text-slate-500">PNG, JPG, GIF를 지원하며 공개 이력서 상단 명함사진으로 노출됩니다.</p>
               {profile.photo ? (
                 <div className="relative mx-auto flex h-40 w-40 items-center justify-center overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100">
                   <img
                     src={profile.photo}
-                    alt={`${profile.name} 프로필`}
+                    alt={`${profile.name} 명함사진`}
                     className="h-full w-full object-cover"
                     style={getPhotoTransformStyle(profile)}
                   />

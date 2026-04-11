@@ -172,7 +172,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         });
 
         if (signInError) {
-          setError("Supabase 인증에 실패했습니다. Google/Supabase 연동을 확인하세요.");
+          setError(`Supabase 인증에 실패했습니다: ${signInError.message}`);
           window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
           setUser(null);
           return;

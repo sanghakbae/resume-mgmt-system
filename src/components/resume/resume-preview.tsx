@@ -43,7 +43,7 @@ export function ResumePreview({
               {profile.photo ? (
                 <img
                   src={profile.photo}
-                  alt={`${profile.name} 프로필 사진`}
+                  alt={`${profile.name} 명함사진`}
                   className="h-full w-full object-cover"
                   style={getPhotoTransformStyle(profile)}
                 />
@@ -53,6 +53,7 @@ export function ResumePreview({
                 </div>
               )}
             </div>
+            <p className="text-center text-[11px] leading-4 text-slate-500">명함사진</p>
             {isCompactHeader ? null : (
               <h2 className="break-words text-center text-lg font-semibold leading-[1.05] tracking-tight sm:text-xl">{profile.name}</h2>
             )}
