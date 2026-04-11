@@ -167,7 +167,7 @@ export const defaultProfile: Profile = {
     "지난 18년 이상 정보보안 전문가로서 보안시스템 개발 기업의 보안 리서처, 다양한 산업군의 보안 컨설턴트, 그리고 AI 서비스 기업의 정보보호 책임자 역할을 수행해왔습니다. ISMS, ISMS-P, ISO 27001, CSAP 인증 컨설팅과 정보보호 관리체계 구축 및 운영, 웹 모의해킹과 시스템 취약점 진단, OT 보안 아키텍처 설계와 보안 마스터플랜 수립 경험을 보유하고 있습니다.",
   photo: "",
   photoPositionX: 50,
-  photoPositionY: 20,
+  photoPositionY: 50,
   photoScale: 1,
   education: "한국산업기술대학교 컴퓨터공학과\n건국대학교 정보통신대학원 정보시스템감리학과(휴학)",
   career: "2007.01 ~ 현재",

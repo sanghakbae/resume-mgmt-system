@@ -154,7 +154,7 @@ export function ProfileForm({ ownerId, profile, isUploading = false, onChange, o
                   onClick={() => {
                     updateField("photo", "");
                     updateField("photoPositionX", 50);
-                    updateField("photoPositionY", 20);
+                    updateField("photoPositionY", 50);
                     updateField("photoScale", 1);
                   }}
                 >

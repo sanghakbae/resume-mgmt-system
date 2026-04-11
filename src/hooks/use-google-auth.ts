@@ -93,7 +93,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         name: sessionUser.user_metadata?.full_name ?? sessionUser.user_metadata?.name ?? sessionUser.email,
         picture: sessionUser.user_metadata?.avatar_url,
       });
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
     });
 
@@ -112,7 +112,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         name: sessionUser.user_metadata?.full_name ?? sessionUser.user_metadata?.name ?? sessionUser.email,
         picture: sessionUser.user_metadata?.avatar_url,
       });
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
     });
 

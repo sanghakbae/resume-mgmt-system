@@ -114,7 +114,7 @@ export default function App() {
   const [visitCount, setVisitCount] = useState(0);
   const [visitLogs, setVisitLogs] = useState<VisitLogItem[]>([]);
   const [fontFamily, setFontFamily] = useState<string>(() => getSavedFontFamily());
-  const activeOwnerId = isPublicResumeMode ? "public-resume" : isAdmin ? selectedOwnerId ?? user?.sub ?? "" : user?.sub ?? "";
+  const activeOwnerId = isPublicResumeMode ? user?.sub ?? "public-resume" : isAdmin ? selectedOwnerId ?? user?.sub ?? "" : user?.sub ?? "";
   const effectiveIsEditMode = isPublicResumeMode ? isPublicEditor && isEditMode : isEditMode;
   const canSaveWorkspace = !isPublicResumeMode || isPublicEditor;
   const {
@@ -409,12 +409,12 @@ export default function App() {
 
       if (!isSupabaseConfigured) {
         const dataUrl = await readFileAsDataUrl(preparedFile);
-        setProfile((prev) => ({ ...prev, photo: dataUrl, photoPositionX: 50, photoPositionY: 20, photoScale: 1 }));
+        setProfile((prev) => ({ ...prev, photo: dataUrl, photoPositionX: 50, photoPositionY: 50, photoScale: 1 }));
         return;
       }
 
       const publicUrl = await uploadResumeAsset(preparedFile, activeOwnerId, "profile");
-      setProfile((prev) => ({ ...prev, photo: publicUrl, photoPositionX: 50, photoPositionY: 20, photoScale: 1 }));
+      setProfile((prev) => ({ ...prev, photo: publicUrl, photoPositionX: 50, photoPositionY: 50, photoScale: 1 }));
     } catch {
       setAssetUploadError("프로필 사진을 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
@@ -513,7 +513,7 @@ export default function App() {
                       현재 배포본에 Google 로그인 설정이 연결되지 않아 편집 로그인을 사용할 수 없습니다.
                     </div>
                   ) : null}
-                  {authError ? (
+                  {authError && !user ? (
                     <div className="flex w-full items-center rounded-[10px] border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] leading-4 text-rose-700 md:w-auto">
                       {authError}
                     </div>
