@@ -28,6 +28,7 @@ import type {
 } from "@/types/resume";
 
 const DEFAULT_GOOGLE_CLIENT_ID = "924920443826-lo1msns5cgvnh7u1714ikcqj2fq4srji.apps.googleusercontent.com";
+const PRIMARY_ACCOUNT_EMAIL = "totoriverce@gmail.com";
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
   {
@@ -82,22 +83,13 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
 export default function App() {
   const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
-  const adminEmails = ((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  const editorEmails = ((import.meta.env.VITE_EDITOR_EMAILS as string | undefined) ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  const loginAllowedEmails = [...new Set([...adminEmails, ...editorEmails])];
-  const editAllowedEmails = [...new Set([...adminEmails, ...editorEmails])];
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth({
-    allowedEmails: loginAllowedEmails,
-    deniedMessage: "totoriverce@gmail.com만 로그인 가능합니다.",
+    allowedEmails: [PRIMARY_ACCOUNT_EMAIL],
+    deniedMessage: `${PRIMARY_ACCOUNT_EMAIL}만 로그인 가능합니다.`,
   });
-  const isAdmin = !isPublicResumeMode && user ? adminEmails.includes(user.email.toLowerCase()) : false;
-  const isPublicEditor = isPublicResumeMode && user ? editAllowedEmails.includes(user.email.toLowerCase()) : false;
+  const isPrimaryAccount = user ? user.email.toLowerCase() === PRIMARY_ACCOUNT_EMAIL : false;
+  const isAdmin = !isPublicResumeMode && isPrimaryAccount;
+  const isPublicEditor = isPublicResumeMode && isPrimaryAccount;
   const hasAppAccess = user ? (isPublicResumeMode ? isPublicEditor : isAdmin) : false;
   const [isEditMode, setIsEditMode] = useState(true);
   const [companyForm, setCompanyForm] = useState<CompanyFormValues>(emptyCompanyForm);
