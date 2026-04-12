@@ -33,6 +33,7 @@ jobs:
 
       - name: Build
         env:
+          VITE_BASE_PATH: "/"
           VITE_ENABLE_SUPABASE: "true"
           VITE_PUBLIC_RESUME_MODE: "true"
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID != '' && vars.VITE_GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID }}
