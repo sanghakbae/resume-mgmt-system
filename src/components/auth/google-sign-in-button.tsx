@@ -16,35 +16,47 @@ export function GoogleSignInButton({ clientId, disabled, compact = false, onSucc
   useEffect(() => {
     if (disabled || (compact ? false : !buttonRef.current)) return;
 
+    let cancelled = false;
     const googleWindow = window as GoogleWindow;
     const google = googleWindow.google;
     if (!google) return;
     googleRef.current = google;
 
-    if (buttonRef.current) {
-      buttonRef.current.innerHTML = "";
-    }
-    const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
-    const buttonWidth = buttonRef.current ? Math.min(Math.max(buttonRef.current.clientWidth, 160), 360) : 160;
+    const initializeGoogleButton = async () => {
+      const hashedNonce = await sha256(nonceRef.current);
+      if (cancelled) return;
 
-    google.accounts.id.disableAutoSelect();
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: (response) => onSuccess(response, nonceRef.current),
-      auto_select: false,
-      nonce: nonceRef.current,
-      ux_mode: "popup",
-    });
+      if (buttonRef.current) {
+        buttonRef.current.innerHTML = "";
+      }
+      const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+      const buttonWidth = buttonRef.current ? Math.min(Math.max(buttonRef.current.clientWidth, 160), 360) : 160;
 
-    if (compact) return;
+      google.accounts.id.disableAutoSelect();
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response) => onSuccess(response, nonceRef.current),
+        auto_select: false,
+        nonce: hashedNonce,
+        ux_mode: "popup",
+      });
 
-    google.accounts.id.renderButton(buttonRef.current, {
-      theme: "outline",
-      size: isMobileViewport ? "small" : "medium",
-      text: isMobileViewport ? "signin" : "signin_with",
-      shape: isMobileViewport ? "rectangular" : "pill",
-      width: buttonWidth,
-    });
+      if (compact) return;
+
+      google.accounts.id.renderButton(buttonRef.current, {
+        theme: "outline",
+        size: isMobileViewport ? "small" : "medium",
+        text: isMobileViewport ? "signin" : "signin_with",
+        shape: isMobileViewport ? "rectangular" : "pill",
+        width: buttonWidth,
+      });
+    };
+
+    void initializeGoogleButton();
+
+    return () => {
+      cancelled = true;
+    };
   }, [clientId, compact, disabled, onSuccess]);
 
   if (compact) {
@@ -67,4 +79,10 @@ function createAuthNonce() {
   const bytes = new Uint8Array(16);
   window.crypto?.getRandomValues(bytes);
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const hashBuffer = await window.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hashBuffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
