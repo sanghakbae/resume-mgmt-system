@@ -488,7 +488,7 @@ export default function App() {
                   ) : null}
                   {!user && googleClientId ? (
                     <div className={`${publicHeaderControlClass} shrink`}>
-                      <GoogleSignInButton clientId={googleClientId} compact={isMobilePreview} forceCompact={!isMobilePreview} disabled={!isReady} onSuccess={signIn} />
+                      <GoogleSignInButton clientId={googleClientId} compact={isMobilePreview} disabled={!isReady} onSuccess={signIn} />
                     </div>
                   ) : null}
                   {!user && !googleClientId ? (

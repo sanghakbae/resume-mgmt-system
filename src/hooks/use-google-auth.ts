@@ -150,10 +150,11 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     };
   }, []);
 
-  const signIn = async (response: GoogleCredentialResponse) => {
+  const signIn = async (response: GoogleCredentialResponse, nonce?: string) => {
     try {
       const nextUser = parseGoogleCredential(response.credential);
       const normalizedEmail = nextUser.email.toLowerCase();
+      const tokenNonce = readGoogleCredentialNonce(response.credential) ?? nonce;
 
       if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
         setError(deniedMessage);
@@ -169,6 +170,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
         const { error: signInError } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: response.credential,
+          ...(tokenNonce ? { nonce: tokenNonce } : {}),
         });
 
         if (signInError) {
@@ -206,4 +208,18 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     signIn,
     signOut,
   };
+}
+
+function readGoogleCredentialNonce(credential: string) {
+  try {
+    const payload = credential.split(".")[1];
+    if (!payload) return undefined;
+
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = window.atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+    const parsed = JSON.parse(decoded) as { nonce?: unknown };
+    return typeof parsed.nonce === "string" ? parsed.nonce : undefined;
+  } catch {
+    return undefined;
+  }
 }

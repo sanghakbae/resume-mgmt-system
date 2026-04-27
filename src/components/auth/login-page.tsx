@@ -6,7 +6,7 @@ type LoginPageProps = {
   clientId?: string;
   isReady: boolean;
   error: string | null;
-  onLogin: (response: GoogleCredentialResponse) => void;
+  onLogin: (response: GoogleCredentialResponse, nonce?: string) => void;
 };
 
 export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps) {

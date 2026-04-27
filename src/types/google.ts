@@ -21,6 +21,7 @@ export type GoogleWindow = Window & {
           client_id: string;
           callback: (response: GoogleCredentialResponse) => void | Promise<void>;
           auto_select?: boolean;
+          nonce?: string;
           ux_mode?: "popup" | "redirect";
         }) => void;
         renderButton: (element: HTMLElement, options: GoogleRenderButtonConfig) => void;
