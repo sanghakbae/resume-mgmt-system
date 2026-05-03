@@ -207,7 +207,6 @@ export function CareerDashboard({
     }
   }
 
-  const topKeywords = [...keywordCounts.entries()].sort((left, right) => right[1] - left[1]);
   const specialties = profile.specialty
     .split("/")
     .map((value) => value.trim())
@@ -314,7 +313,7 @@ export function CareerDashboard({
             value={topCategory ? categoryMeta[topCategory.category].label : "-"}
             tone="focus"
           />
-          <DashboardStat icon={Sparkles} label="주요 태그" value={`${topKeywords.length}개`} tone="tags" />
+          <DashboardStat icon={Sparkles} label="주요 태그" value={`${tagDistribution.length}개`} tone="tags" />
         </div>
 
         <div className="mt-2.5 grid gap-2 items-stretch md:mt-4 md:gap-3 xl:grid-cols-[minmax(220px,max-content)_minmax(0,1fr)_minmax(260px,max-content)]" data-export-dashboard-lower data-export-dashboard-panels>
@@ -409,7 +408,8 @@ function SkillDistributionView({
   tags: [string, number][];
   strongestCount: number;
 }) {
-  const topTags = tags.slice(0, 18);
+  const visibleLimit = getSkillTagLimit(view);
+  const topTags = tags.slice(0, visibleLimit);
 
   if (view === "orbit") {
     return (
@@ -460,7 +460,7 @@ function SkillDistributionView({
   if (view === "bars") {
     return (
       <div className="grid w-full content-center gap-1.5">
-        {tags.slice(0, 8).map(([tag, count]) => (
+        {topTags.map(([tag, count]) => (
           <div key={tag} className="grid min-h-5 w-full grid-cols-[minmax(96px,0.22fr)_minmax(0,1fr)_32px] items-center gap-2 text-[12px]">
             <span className="min-w-0 break-keep font-semibold leading-4 text-slate-700">{tag}</span>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -475,7 +475,7 @@ function SkillDistributionView({
 
   return (
     <div className="grid w-full content-center gap-1">
-      {tags.slice(0, 8).map(([tag, count], index) => (
+      {topTags.map(([tag, count], index) => (
         <div key={tag} className="grid min-h-6 grid-cols-[minmax(0,1fr)_32px] items-center gap-2 rounded-[7px] border border-slate-200 bg-white px-2 py-0.5">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[9px] font-bold leading-none text-white">{index + 1}</span>
@@ -486,6 +486,10 @@ function SkillDistributionView({
       ))}
     </div>
   );
+}
+
+function getSkillTagLimit(view: "orbit" | "chips" | "bars" | "list") {
+  return view === "orbit" || view === "chips" ? 18 : 8;
 }
 
 function AccentPanel({

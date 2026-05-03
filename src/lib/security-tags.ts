@@ -13,31 +13,7 @@ type TagRule = {
   categories?: ResumeCategory[];
 };
 
-const MAX_SECURITY_TAGS = 5;
-
-const CURATED_PROJECT_TAGS: Record<string, string[]> = {
-  "CISO/CPO 기반 정보보호 관리체계 수립 및 ISMS 준비": ["ISMS", "보안 정책", "위험평가", "개인정보보호", "보안 운영"],
-  "대외 웹 서비스 모의해킹 및 보안 교육 체계 운영": ["웹 모의해킹", "Burp Suite", "보안 교육", "개발보안", "점검 가이드"],
-  "ITGC 통제 관리시스템 개발 및 운영": ["ITGC", "통제 관리", "증적 관리", "운영 자동화", "관리체계 구축"],
-  "정보보호 관리체계 운영 및 CSAP·ISO 인증 대응": ["CSAP", "ISO 27001", "ISO 27017", "보안성 검토", "보안 운영"],
-  "업무용 소프트웨어 보안 및 비용 관리 체계 운영": ["Google Workspace", "GitHub", "Atlassian", "2FA", "IP ACL"],
-  "롯데면세점 ISMS-P 인증(사후) 컨설팅 PM": ["ISMS-P", "Gap 분석", "위험평가", "법적 준거성", "현장 점검"],
-  "메디트 ISO 27001 갱신 및 글로벌 컴플라이언스 검토 PM": ["ISO 27001", "GDPR", "HIPAA", "하드닝", "컴플라이언스"],
-  "CJ 푸드빌 ISMS-P 최초 인증 컨설팅 PM": ["ISMS-P", "Gap 분석", "웹 모의해킹", "하드닝", "보안 정책"],
-  "롯데 마트·슈퍼 ISMS 사후 인증 컨설팅 PM": ["ISMS", "Gap 분석", "위험평가", "하드닝", "인증 대응"],
-  "발전소 OT 보안 마스터플랜 및 아키텍처 설계": ["OT 보안", "Nozomi Guardian", "망분리", "Purdue 모델", "보안 아키텍처"],
-  "LS산전 OT 보안체계 수립 컨설팅 PM": ["OT 보안", "Nozomi Guardian", "이상징후 분석", "보안 마스터플랜", "보안 아키텍처"],
-  "SK실트론 OT 보안 마스터플랜 수립 PM": ["OT 보안", "망분리", "보안 운영", "보안 마스터플랜", "OA/FA"],
-  "위메프 보안기술팀 운영 및 보안성 검토 체계 수립": ["보안성 검토", "DB 접근제어", "소스코드 진단", "보안관제", "방화벽 정책"],
-  "평창동계올림픽 EMS 구축 및 OT 보안 솔루션 프리세일즈": ["OT 보안", "EMS", "PLC", "Modbus", "프리세일즈"],
-  "한국수자원공사 천안정수장 OT 보안솔루션 구축 및 운영": ["SCADA", "기반시설 보안", "OT 보안", "Multi Homed Network", "망분리"],
-  "금융·항공·공공 분야 모의해킹 및 개인정보보호 컨설팅": ["PCI-DSS", "개인정보보호", "웹 모의해킹", "보안성 검토", "보안 컨설팅"],
-  "CJ 그룹 웹 모의해킹 및 보안시스템 운영": ["FireEye", "침해사고 분석", "ESM", "웹 모의해킹", "탐지 룰"],
-  "침해사고 대응 및 대학·언론사 모의해킹": ["침해사고 대응", "웹 모의해킹", "취약점 진단", "SQL Injection", "WAF 우회"],
-  "국가 기반시설 취약점 분석 및 평가": ["기반시설 보안", "시스템 취약점 진단", "방화벽 정책", "망분리", "망연계"],
-  "SKT 인프라 보안 취약점 진단 및 웹 모의해킹": ["인프라 보안", "시스템 취약점 진단", "웹 모의해킹", "자동화 스크립트", "SQL Injection"],
-  "웹방화벽 시그니처 룰 개발 및 웹 취약점 연구": ["WAF", "탐지 룰", "허니팟", "웹 취약점 진단", "보안 교육"],
-};
+const MAX_SECURITY_TAGS = 8;
 
 const TAG_RULES: TagRule[] = [
   { tag: "OT 보안", synonyms: ["ot", "ics", "scada", "plc", "dcs", "hmi", "제어시스템", "산업제어", "스마트팩토리"], categories: ["클라우드 보안"] },
@@ -51,6 +27,7 @@ const TAG_RULES: TagRule[] = [
   { tag: "방화벽", synonyms: ["방화벽", "firewall"], categories: ["보안 컨설팅", "클라우드 보안"] },
   { tag: "방화벽 정책", synonyms: ["방화벽 정책", "firewall policy"], categories: ["보안 컨설팅", "취약점 진단"] },
   { tag: "WAF", synonyms: ["waf", "웹방화벽", "modsecurity", "webknight"], categories: ["모의해킹", "개발/자동화"] },
+  { tag: "Burp Suite", synonyms: ["burp suite", "burp"], categories: ["모의해킹", "취약점 진단"] },
   { tag: "웹 모의해킹", synonyms: ["모의해킹", "웹 해킹", "web hacking", "침투 테스트", "pentest", "penetration"], categories: ["모의해킹"] },
   { tag: "모의해킹", synonyms: ["모의해킹", "침투 테스트", "penetration", "pentest"], categories: ["모의해킹"] },
   { tag: "취약점 진단", synonyms: ["취약점 진단", "취약점 점검", "취약점 분석", "vulnerability"], categories: ["취약점 진단"] },
@@ -59,20 +36,29 @@ const TAG_RULES: TagRule[] = [
   { tag: "소스코드 진단", synonyms: ["소스코드 진단", "코드 진단", "sonarqube", "sast"], categories: ["취약점 진단", "개발/자동화"] },
   { tag: "SQL Injection", synonyms: ["sql injection", "sqlmap", "sqli"], categories: ["모의해킹", "취약점 진단"] },
   { tag: "WAF 우회", synonyms: ["waf 우회"], categories: ["모의해킹"] },
+  { tag: "취약점 점검", synonyms: ["취약점 점검", "점검 자동화"], categories: ["취약점 진단"] },
   { tag: "하드닝", synonyms: ["하드닝", "hardening"], categories: ["취약점 진단", "보안 컨설팅"] },
   { tag: "시스템 하드닝", synonyms: ["시스템 하드닝", "hardening"], categories: ["취약점 진단", "보안 컨설팅"] },
   { tag: "침해사고 대응", synonyms: ["침해사고 대응", "incident response", "ir", "사고 대응"], categories: ["모의해킹", "보안 컨설팅"] },
   { tag: "침해사고 분석", synonyms: ["침해사고 분석", "포렌식", "forensic"], categories: ["모의해킹"] },
   { tag: "보안관제", synonyms: ["보안관제", "관제", "esm", "siem", "soc"], categories: ["개발/자동화", "보안 컨설팅"] },
+  { tag: "침해사고 대응 절차", synonyms: ["침해사고 대응 절차", "침해사고 대응", "사고 대응 절차"], categories: ["보안 컨설팅", "인증"] },
   { tag: "탐지 룰", synonyms: ["탐지 룰", "시그니처 룰", "signature"], categories: ["개발/자동화", "모의해킹"] },
+  { tag: "FireEye", synonyms: ["fireeye"], categories: ["개발/자동화", "모의해킹"] },
+  { tag: "ESM", synonyms: ["esm"], categories: ["개발/자동화", "모의해킹"] },
   { tag: "허니팟", synonyms: ["허니팟", "honeypot"], categories: ["개발/자동화", "모의해킹"] },
   { tag: "자동화 스크립트", synonyms: ["자동화 스크립트", "스크립트 고도화", "automation"], categories: ["개발/자동화"] },
   { tag: "보안 자동화", synonyms: ["자동화", "자동화 스크립트", "운영 자동화"], categories: ["개발/자동화"] },
   { tag: "ITGC", synonyms: ["itgc"], categories: ["개발/자동화", "인증"] },
   { tag: "통제 관리", synonyms: ["통제 관리", "통제항목"], categories: ["인증", "개발/자동화"] },
   { tag: "증적 관리", synonyms: ["증적 관리", "증적"], categories: ["인증", "개발/자동화"] },
+  { tag: "운영 자동화", synonyms: ["운영 자동화", "자동화 운영"], categories: ["개발/자동화"] },
+  { tag: "운영 현황 가시화", synonyms: ["운영 현황 가시화", "현황 가시화", "가시화"], categories: ["개발/자동화", "인증"] },
   { tag: "보안 운영", synonyms: ["보안 운영", "운영 체계", "보안시스템 운영"], categories: ["보안 컨설팅", "인증"] },
+  { tag: "보안 정책", synonyms: ["보안 정책", "정보보안 정책", "정책 및 지침", "보안 규정"], categories: ["인증", "보안 컨설팅"] },
+  { tag: "보안 프로세스", synonyms: ["보안 프로세스", "보안 절차", "체크리스트"], categories: ["인증", "보안 컨설팅"] },
   { tag: "보안성 검토", synonyms: ["보안성 검토"], categories: ["보안 컨설팅", "인증"] },
+  { tag: "현장 점검", synonyms: ["현장 점검", "영업점 현장"], categories: ["인증", "취약점 진단"] },
   { tag: "위험평가", synonyms: ["위험평가", "risk assessment", "위험 분석"], categories: ["인증", "보안 컨설팅"] },
   { tag: "Gap 분석", synonyms: ["gap 분석", "갭 분석"], categories: ["인증", "보안 컨설팅"] },
   { tag: "법적 준거성", synonyms: ["법적 준거성", "준거성"], categories: ["인증", "보안 컨설팅"] },
@@ -80,7 +66,9 @@ const TAG_RULES: TagRule[] = [
   { tag: "개인정보보호", synonyms: ["개인정보", "privacy", "cpo", "개인정보처리방침"], categories: ["인증", "보안 컨설팅"] },
   { tag: "개인정보 위수탁", synonyms: ["위수탁"], categories: ["인증"] },
   { tag: "보안 교육", synonyms: ["보안 교육", "인식 교육", "캠페인"], categories: ["보안 컨설팅", "인증"] },
+  { tag: "보안 인식 제고", synonyms: ["보안 인식", "인식 제고", "캠페인"], categories: ["보안 컨설팅", "인증"] },
   { tag: "개발보안", synonyms: ["개발보안", "secure coding"], categories: ["개발/자동화", "보안 컨설팅"] },
+  { tag: "점검 가이드", synonyms: ["점검 가이드", "가이드 작성"], categories: ["보안 컨설팅", "취약점 진단"] },
   { tag: "인증 대응", synonyms: ["인증 준비", "인증 대응", "인증 심사", "인증"], categories: ["인증"] },
   { tag: "ISMS", synonyms: ["isms"], categories: ["인증"] },
   { tag: "ISMS-P", synonyms: ["isms-p", "ismsp"], categories: ["인증"] },
@@ -99,20 +87,29 @@ const TAG_RULES: TagRule[] = [
   { tag: "프리세일즈", synonyms: ["프리세일즈", "presales", "pre-sales"], categories: ["보안 컨설팅", "클라우드 보안"] },
   { tag: "PoC", synonyms: ["poc", "개념검증"], categories: ["클라우드 보안", "개발/자동화"] },
   { tag: "Nozomi Guardian", synonyms: ["nozomi"], categories: ["클라우드 보안"] },
+  { tag: "이상징후 분석", synonyms: ["이상징후", "이상 징후"], categories: ["클라우드 보안", "보안 컨설팅"] },
+  { tag: "보안 아키텍처", synonyms: ["보안 아키텍처", "아키텍처 설계"], categories: ["클라우드 보안", "보안 컨설팅"] },
+  { tag: "보안 마스터플랜", synonyms: ["보안 마스터플랜", "마스터플랜"], categories: ["클라우드 보안", "보안 컨설팅"] },
+  { tag: "OA/FA", synonyms: ["oa/fa"], categories: ["클라우드 보안"] },
+  { tag: "EMS", synonyms: ["ems", "에너지 모니터링"], categories: ["클라우드 보안", "개발/자동화"] },
   { tag: "DLP", synonyms: ["dlp"], categories: ["보안 컨설팅", "인증"] },
+  { tag: "백신", synonyms: ["백신", "antivirus"], categories: ["보안 컨설팅", "인증"] },
   { tag: "Trivy", synonyms: ["trivy"], categories: ["개발/자동화", "인증"] },
   { tag: "SonarQube", synonyms: ["sonarqube"], categories: ["개발/자동화", "인증"] },
   { tag: "Datadog", synonyms: ["datadog"], categories: ["개발/자동화"] },
   { tag: "Google Workspace", synonyms: ["google workspace"], categories: ["개발/자동화"] },
+  { tag: "라이선스 관리", synonyms: ["라이선스", "license"], categories: ["개발/자동화"] },
   { tag: "GitHub", synonyms: ["github"], categories: ["개발/자동화"] },
   { tag: "Atlassian", synonyms: ["atlassian", "jira", "confluence"], categories: ["개발/자동화"] },
   { tag: "Slack", synonyms: ["slack"], categories: ["개발/자동화"] },
   { tag: "2FA", synonyms: ["2fa", "2단계 인증", "mfa"], categories: ["인증", "개발/자동화"] },
   { tag: "IP ACL", synonyms: ["ip acl", "acl"], categories: ["보안 컨설팅", "개발/자동화"] },
   { tag: "VPN", synonyms: ["vpn"], categories: ["보안 컨설팅", "개발/자동화"] },
+  { tag: "접근 통제", synonyms: ["접근 통제", "접근제어", "접근 통제를"], categories: ["보안 컨설팅", "개발/자동화"] },
   { tag: "DB 접근제어", synonyms: ["db 접근제어"], categories: ["보안 컨설팅", "개발/자동화"] },
   { tag: "인프라 보안", synonyms: ["infra", "인프라", "server", "was", "web/was", "dbms", "네트워크"], categories: ["취약점 진단", "보안 컨설팅"] },
   { tag: "기반시설 보안", synonyms: ["기반시설", "에너지", "발전", "공기업"], categories: ["클라우드 보안", "취약점 진단"] },
+  { tag: "Multi Homed Network", synonyms: ["multi homed network", "multi homed"], categories: ["클라우드 보안", "취약점 진단"] },
 ];
 
 const CATEGORY_DEFAULT: ResumeCategory = "보안 컨설팅";
@@ -185,11 +182,6 @@ export function inferExperienceCategory(input: ProjectTagInput): ResumeCategory 
 }
 
 export function generateSecurityTags(input: ProjectTagInput) {
-  const curatedTags = CURATED_PROJECT_TAGS[input.title.trim()];
-  if (curatedTags) {
-    return curatedTags.slice(0, MAX_SECURITY_TAGS);
-  }
-
   const rawSource = [input.title, input.organization, input.description, ...(input.existingTags ?? [])].join(" ");
   const source = normalizeText(rawSource);
   const scoredTags = new Map<string, number>();
@@ -232,9 +224,11 @@ export function generateSecurityTags(input: ProjectTagInput) {
     }
   }
 
-  const manualTags = dedupeTags(input.existingTags ?? []).slice(0, MAX_SECURITY_TAGS);
+  for (const tag of dedupeTags(input.existingTags ?? [])) {
+    addScore(tag, 1);
+  }
+
   const scoredMatches = [...scoredTags.entries()]
-    .filter(([tag]) => !manualTags.some((manualTag) => manualTag.toLowerCase() === tag.toLowerCase()))
     .sort((left, right) => {
       const scoreGap = right[1] - left[1];
       if (scoreGap !== 0) return scoreGap;
@@ -242,5 +236,5 @@ export function generateSecurityTags(input: ProjectTagInput) {
     })
     .map(([tag]) => tag);
 
-  return dedupeTags([...manualTags, ...scoredMatches]).slice(0, MAX_SECURITY_TAGS);
+  return dedupeTags(scoredMatches).slice(0, MAX_SECURITY_TAGS);
 }

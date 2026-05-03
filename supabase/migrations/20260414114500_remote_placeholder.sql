@@ -1,0 +1,2 @@
+-- Remote migration placeholder for 20260414114500.
+-- The schema change already exists in the linked Supabase project.

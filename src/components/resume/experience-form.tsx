@@ -1,5 +1,5 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-import { ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
+import { CalendarDays, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ export function ExperienceForm({
   onUploadImage,
 }: ExperienceFormProps) {
   const sortedExperiences = [...experiences].sort((left, right) => getExperiencePeriodScore(right.period) - getExperiencePeriodScore(left.period));
+  const periodDates = parsePeriodToDateInputs(form.period);
 
   const updateField = <K extends keyof ExperienceFormValues>(key: K, value: ExperienceFormValues[K]) => {
     onChange((prev) => ({ ...prev, [key]: value }));
@@ -97,7 +98,43 @@ export function ExperienceForm({
               </>
             </FormField>
             <FormField label="기간" error={errors.period}>
-              <Input value={form.period} onChange={(e) => updateField("period", e.target.value)} placeholder="예: 2025.01 - 2025.03" />
+              <div className="space-y-2">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="flex items-center gap-1.5 text-[12px] font-medium leading-4 text-slate-500">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      시작
+                    </span>
+                    <Input
+                      type="date"
+                      value={periodDates.startDate}
+                      onChange={(e) => updateField("period", buildPeriodValue(e.target.value, periodDates.endDate, periodDates.isPresent))}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="flex items-center gap-1.5 text-[12px] font-medium leading-4 text-slate-500">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      종료
+                    </span>
+                    <Input
+                      type="date"
+                      value={periodDates.endDate}
+                      disabled={periodDates.isPresent}
+                      onChange={(e) => updateField("period", buildPeriodValue(periodDates.startDate, e.target.value, periodDates.isPresent))}
+                    />
+                  </label>
+                </div>
+                <label className="flex items-center gap-2 text-[12px] font-medium leading-4 text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={periodDates.isPresent}
+                    onChange={(e) => updateField("period", buildPeriodValue(periodDates.startDate, periodDates.endDate, e.target.checked))}
+                    className="h-4 w-4 accent-slate-900"
+                  />
+                  현재 진행 중
+                </label>
+                <p className="text-[12px] leading-4 text-slate-500">{form.period || "시작일과 종료일을 선택하세요."}</p>
+              </div>
             </FormField>
             <FormField label="수행 업무 설명" error={errors.description}>
               <textarea
@@ -113,13 +150,6 @@ export function ExperienceForm({
                 placeholder="예: https://example.com/project"
               />
             </FormField>
-            <FormField label="추가 키워드(선택)">
-              <Input
-                value={form.highlight}
-                onChange={(e) => updateField("highlight", e.target.value)}
-                placeholder="쉼표로 구분 예: AWS, IAM, 아키텍처"
-              />
-            </FormField>
             <label className="flex cursor-pointer items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium leading-5 text-slate-700">
               <input
                 type="checkbox"
@@ -129,6 +159,27 @@ export function ExperienceForm({
               />
               대표 성과 하이라이트에 표시
             </label>
+            <FormField label="표시 위치">
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { value: "portfolio", label: "포트폴리오" },
+                  { value: "technical", label: "경력기술서" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={
+                      form.documentType === option.value
+                        ? "min-h-8 rounded-[8px] border border-slate-950 bg-slate-950 px-2 text-[12px] font-semibold leading-4 text-white"
+                        : "min-h-8 rounded-[8px] border border-slate-200 bg-white px-2 text-[12px] font-semibold leading-4 text-slate-600"
+                    }
+                    onClick={() => updateField("documentType", option.value as ExperienceFormValues["documentType"])}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </FormField>
             <FormField label="업무 이미지">
               <div className="space-y-2">
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-[13px] font-medium leading-5 text-slate-700">
@@ -191,6 +242,9 @@ export function ExperienceForm({
                           대표 성과
                         </span>
                       ) : null}
+                      <span className="inline-flex w-fit rounded-[5px] border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-600">
+                        {getDocumentTypeLabel(experience.documentType)}
+                      </span>
                     </div>
 
                     <p className="line-clamp-3 text-[12px] leading-5 text-slate-600">{experience.description}</p>
@@ -218,6 +272,11 @@ export function ExperienceForm({
   );
 }
 
+function getDocumentTypeLabel(documentType: ExperienceItem["documentType"]) {
+  if (documentType === "portfolio") return "포트폴리오";
+  return "경력기술서";
+}
+
 function getExperiencePeriodScore(period: string) {
   const normalized = period.trim();
   if (!normalized) return 0;
@@ -231,4 +290,46 @@ function getExperiencePeriodScore(period: string) {
     .filter((value) => Number.isFinite(value));
 
   return Math.max(...candidates, 0);
+}
+
+function parsePeriodToDateInputs(period: string) {
+  const isPresent = period.includes("현재");
+  const [startRaw = "", endRaw = ""] = period
+    .split(/~|-/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    startDate: toDateInputValue(startRaw),
+    endDate: isPresent ? "" : toDateInputValue(endRaw),
+    isPresent,
+  };
+}
+
+function buildPeriodValue(startDate: string, endDate: string, isPresent: boolean) {
+  const start = formatDateForPeriod(startDate);
+  const end = isPresent ? "현재" : formatDateForPeriod(endDate);
+
+  if (!start && !end) return "";
+  if (!start) return end;
+  if (!end) return start;
+  return `${start} - ${end}`;
+}
+
+function toDateInputValue(value: string) {
+  if (!value || value.includes("현재")) return "";
+
+  const matched = value.match(/(\d{4})\D+(\d{1,2})(?:\D+(\d{1,2}))?/);
+  if (!matched) return "";
+
+  const [, year, month, day = "01"] = matched;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function formatDateForPeriod(value: string) {
+  if (!value) return "";
+
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return "";
+  return `${year}.${month}.${day}`;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { normalizeGoogleUser, parseGoogleCredential } from "@/lib/google-auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { GoogleCredentialResponse, GoogleWindow } from "@/types/google";
@@ -53,7 +53,11 @@ function injectGoogleScript() {
 }
 
 export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessage?: string; enabled?: boolean }) {
-  const allowedEmails = options?.allowedEmails?.map((value) => value.toLowerCase()) ?? [];
+  const allowedEmailSignature = options?.allowedEmails?.join("\n") ?? "";
+  const allowedEmails = useMemo(
+    () => allowedEmailSignature.split("\n").map((value) => value.toLowerCase()).filter(Boolean),
+    [allowedEmailSignature],
+  );
   const deniedMessage = options?.deniedMessage ?? "관리자 계정만 로그인 가능합니다.";
   const enabled = options?.enabled ?? true;
   const [user, setUser] = useState<GoogleUser | null>(() => readStoredSession(allowedEmails));
@@ -150,7 +154,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     };
   }, []);
 
-  const signIn = async (response: GoogleCredentialResponse, nonce?: string) => {
+  const signIn = useCallback(async (response: GoogleCredentialResponse, nonce?: string) => {
     try {
       const nextUser = parseGoogleCredential(response.credential);
       const normalizedEmail = nextUser.email.toLowerCase();
@@ -186,9 +190,9 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     } catch {
       setError("Google 로그인 정보를 처리하지 못했습니다.");
     }
-  };
+  }, [allowedEmails, deniedMessage]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
     setUser(null);
 
@@ -198,7 +202,7 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
 
     const googleWindow = window as GoogleWindow;
     googleWindow.google?.accounts.id.disableAutoSelect();
-  };
+  }, []);
 
   return {
     user,

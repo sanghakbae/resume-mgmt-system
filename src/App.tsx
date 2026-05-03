@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Building2, BriefcaseBusiness, Eye, LogOut, Pencil, RotateCcw, Settings2, ShieldAlert, ShieldCheck, UserRound } from "lucide-react";
+import { BarChart3, Building2, BriefcaseBusiness, Eye, FileText, FolderKanban, LogOut, Pencil, RotateCcw, Settings2, ShieldAlert, ShieldCheck, UserRound } from "lucide-react";
 import { LoginPage } from "@/components/auth/login-page";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CompanyForm } from "@/components/resume/company-form";
+import { ExperienceCard } from "@/components/resume/experience-card";
 import { ExperienceForm } from "@/components/resume/experience-form";
 import { ProfileForm } from "@/components/resume/profile-form";
 import { CareerDashboard, ResumePreview } from "@/components/resume/resume-preview";
@@ -15,11 +16,13 @@ import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
 import { isSupabaseConfigured, uploadResumeAsset } from "@/lib/supabase";
+import { getPublicVisitCount, incrementPublicVisitCount, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
   CompanyProfile,
   CompanyValidationErrors,
   ExperienceFormValues,
+  ExperienceDocumentType,
   ExperienceItem,
   ExperienceValidationErrors,
   ResumeCategory,
@@ -79,6 +82,28 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
   return errors;
 }
 
+function isExperienceVisibleInDocument(item: ExperienceItem, documentType: ExperienceDocumentType) {
+  return (item.documentType ?? "technical") === documentType;
+}
+
+function getExperienceDedupeKey(item: ExperienceItem) {
+  return [item.organization.trim(), item.title.trim(), item.period.trim(), item.description.trim().replace(/\s+/g, " ")].join("::");
+}
+
+function dedupeExperienceItems(items: ExperienceItem[]) {
+  const seen = new Set<string>();
+  const deduped: ExperienceItem[] = [];
+
+  for (const item of items) {
+    const key = getExperienceDedupeKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
+
 export default function App() {
   const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
@@ -104,7 +129,7 @@ export default function App() {
   const [form, setForm] = useState<ExperienceFormValues>(emptyExperienceForm);
   const [formErrors, setFormErrors] = useState<ExperienceValidationErrors>({});
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [selectedEditorSection, setSelectedEditorSection] = useState<"dashboard" | "profile" | "company" | "experience" | "visit-log" | "settings">("dashboard");
+  const [selectedEditorSection, setSelectedEditorSection] = useState<"dashboard" | "profile" | "company" | "experience" | "portfolio" | "technical" | "visit-log" | "settings">("dashboard");
   const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [isUploadingExperienceImage, setIsUploadingExperienceImage] = useState(false);
   const [assetUploadError, setAssetUploadError] = useState<string | null>(null);
@@ -158,37 +183,64 @@ export default function App() {
       return;
     }
 
+    let isCancelled = false;
+    const isCountableVisit = shouldCountPublicVisit(isPublicResumeMode, Boolean(user));
     const countKey = getVisitCountKey(activeOwnerId);
     const logKey = getVisitLogKey(activeOwnerId);
-    const raw = window.localStorage.getItem(countKey);
-    const currentCount = raw ? Number.parseInt(raw, 10) : 0;
-    const safeCount = Number.isFinite(currentCount) && currentCount > 0 ? currentCount : 0;
     const rawLogs = window.localStorage.getItem(logKey);
     const parsedLogs = safeParseVisitLogs(rawLogs);
 
-    setVisitCount(safeCount);
     setVisitLogs(parsedLogs);
 
-    if (visitOwnerRef.current === activeOwnerId) {
-      return;
+    async function syncVisitCount() {
+      try {
+        const currentRemoteCount = await getPublicVisitCount(activeOwnerId);
+        if (isCancelled) return;
+
+        if (!isCountableVisit) {
+          setVisitCount(currentRemoteCount ?? 0);
+          return;
+        }
+
+        if (visitOwnerRef.current === activeOwnerId) {
+          setVisitCount(currentRemoteCount ?? readLocalVisitCount(countKey));
+          return;
+        }
+
+        visitOwnerRef.current = activeOwnerId;
+
+        const nextCount = currentRemoteCount === null ? readLocalVisitCount(countKey) + 1 : await incrementPublicVisitCount(activeOwnerId);
+        if (isCancelled) return;
+
+        const safeNextCount = nextCount ?? 0;
+        if (currentRemoteCount === null) {
+          window.localStorage.setItem(countKey, String(safeNextCount));
+        }
+        setVisitCount(safeNextCount);
+
+        const nextLog = createVisitLogEntry({
+          ownerName: profile.name,
+          isPublicResumeMode,
+          userName: user?.name ?? "게스트",
+          userEmail: user?.email ?? "",
+        });
+        const nextLogs = [nextLog, ...parsedLogs].slice(0, 200);
+        window.localStorage.setItem(logKey, JSON.stringify(nextLogs));
+        setVisitLogs(nextLogs);
+      } catch (error) {
+        console.warn("방문 횟수 동기화에 실패했습니다.", error);
+        if (!isCancelled) {
+          setVisitCount(0);
+        }
+      }
     }
 
-    visitOwnerRef.current = activeOwnerId;
+    void syncVisitCount();
 
-    const nextCount = safeCount + 1;
-    window.localStorage.setItem(countKey, String(nextCount));
-    setVisitCount(nextCount);
-
-    const nextLog = createVisitLogEntry({
-      ownerName: profile.name,
-      isPublicResumeMode,
-      userName: user?.name ?? "게스트",
-      userEmail: user?.email ?? "",
-    });
-    const nextLogs = [nextLog, ...parsedLogs].slice(0, 200);
-    window.localStorage.setItem(logKey, JSON.stringify(nextLogs));
-    setVisitLogs(nextLogs);
-  }, [activeOwnerId, isLoading, isPublicResumeMode]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeOwnerId, isLoading, isPublicResumeMode, profile.name, user]);
 
   const groupedExperiences = useMemo(() => {
     const groups = new Map<ResumeCategory, ExperienceItem[]>();
@@ -205,6 +257,8 @@ export default function App() {
     () => categoryOptions.flatMap((category) => groupedExperiences.get(category) ?? []),
     [groupedExperiences],
   );
+  const portfolioExperiences = useMemo(() => dedupeExperienceItems(allExperiences), [allExperiences]);
+  const technicalExperiences = useMemo(() => dedupeExperienceItems(allExperiences.filter((item) => isExperienceVisibleInDocument(item, "technical"))), [allExperiences]);
   const derivedProfile = useMemo(
     () => ({ ...profile, summary: buildProfileSummary(profile, companies, allExperiences) }),
     [allExperiences, companies, profile],
@@ -214,6 +268,8 @@ export default function App() {
     { key: "profile", label: "기본 정보", icon: UserRound },
     { key: "company", label: "회사 추가", icon: Building2 },
     { key: "experience", label: "수행 업무 추가", icon: BriefcaseBusiness },
+    { key: "portfolio", label: "포트폴리오", icon: FolderKanban },
+    { key: "technical", label: "경력기술서", icon: FileText },
     { key: "visit-log", label: "방문 로그", icon: Eye },
     { key: "settings", label: "설정", icon: Settings2 },
   ] as const;
@@ -277,21 +333,17 @@ export default function App() {
       return;
     }
 
-    const manualHighlights = form.highlight
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
     const inferredCategory = inferExperienceCategory({
       title: form.title.trim(),
       organization: form.organization.trim(),
       description: form.description,
-      existingTags: manualHighlights,
+      existingTags: [],
     });
     const autoTags = generateSecurityTags({
       title: form.title.trim(),
       organization: form.organization.trim(),
       description: form.description,
-      existingTags: manualHighlights,
+      existingTags: [],
     });
     const nextItem: ExperienceItem = {
       id: editingId ?? Date.now(),
@@ -304,6 +356,7 @@ export default function App() {
       url: form.url.trim() || undefined,
       image: form.image || undefined,
       featured: form.featured,
+      documentType: form.documentType,
     };
 
     commitExperience(nextItem);
@@ -329,10 +382,10 @@ export default function App() {
       period: item.period,
       category: item.category,
       description: item.description,
-      highlight: item.highlight.join(", "),
       url: item.url ?? "",
       image: item.image ?? "",
       featured: item.featured ?? false,
+      documentType: item.documentType ?? "technical",
     });
     setFormErrors({});
     setIsEditMode(true);
@@ -628,6 +681,26 @@ export default function App() {
                             />
                           </CardContent>
                         </Card>
+                        <GeneratedExperiencePanel
+                          variant="portfolio"
+                          title="포트폴리오"
+                          description=""
+                          emptyMessage="포트폴리오에 표시할 수행 이력이 없습니다."
+                          items={portfolioExperiences}
+                          isEditMode={effectiveIsEditMode}
+                          onEdit={startEditingExperience}
+                          onRemove={removeExperience}
+                        />
+                        <GeneratedExperiencePanel
+                          variant="technical"
+                          title="경력기술서"
+                          description=""
+                          emptyMessage="경력기술서에 표시할 수행 이력이 없습니다."
+                          items={technicalExperiences}
+                          isEditMode={effectiveIsEditMode}
+                          onEdit={startEditingExperience}
+                          onRemove={removeExperience}
+                        />
                       </div>
                     )
                   ) : null}
@@ -668,6 +741,30 @@ export default function App() {
                       onEdit={startEditingExperience}
                       onRemove={removeExperience}
                       onUploadImage={uploadExperienceImage}
+                    />
+                  ) : null}
+                  {selectedEditorSection === "portfolio" ? (
+                    <GeneratedExperiencePanel
+                      variant="portfolio"
+                      title="포트폴리오"
+                      description=""
+                      emptyMessage="포트폴리오에 표시할 수행 이력이 없습니다."
+                      items={portfolioExperiences}
+                      isEditMode
+                      onEdit={startEditingExperience}
+                      onRemove={removeExperience}
+                    />
+                  ) : null}
+                  {selectedEditorSection === "technical" ? (
+                    <GeneratedExperiencePanel
+                      variant="technical"
+                      title="경력기술서"
+                      description=""
+                      emptyMessage="경력기술서에 표시할 수행 이력이 없습니다."
+                      items={technicalExperiences}
+                      isEditMode
+                      onEdit={startEditingExperience}
+                      onRemove={removeExperience}
                     />
                   ) : null}
                   {selectedEditorSection === "visit-log" ? <VisitLogPanel logs={visitLogs} /> : null}
@@ -726,6 +823,240 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
       </CardContent>
     </Card>
   );
+}
+
+function GeneratedExperiencePanel({
+  variant,
+  title,
+  description,
+  emptyMessage,
+  items,
+  isEditMode,
+  onEdit,
+  onRemove,
+}: {
+  variant: "portfolio" | "technical";
+  title: string;
+  description: string;
+  emptyMessage: string;
+  items: ExperienceItem[];
+  isEditMode: boolean;
+  onEdit: (experience: ExperienceItem) => void;
+  onRemove: (id: number) => void;
+}) {
+  const panelTone =
+    variant === "portfolio"
+      ? {
+          card: "border-sky-200 bg-sky-50/50",
+          header: "border-sky-200 bg-sky-900 text-white",
+          badge: "bg-white/15 text-sky-50",
+          body: "bg-white",
+        }
+      : {
+          card: "border-slate-300 bg-slate-50",
+          header: "border-slate-300 bg-slate-950 text-white",
+          badge: "bg-white/15 text-slate-50",
+          body: "bg-white",
+        };
+
+  return (
+    <Card className={`overflow-hidden rounded-[10px] border shadow-sm ${panelTone.card}`}>
+      <CardContent className="space-y-3 p-0">
+        <div className={`flex flex-col gap-1 border-b px-3.5 py-3 sm:px-4 ${panelTone.header}`}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold leading-6">{title}</h2>
+            {variant === "portfolio" ? (
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-4 ${panelTone.badge}`}>{items.length}건</span>
+            ) : null}
+          </div>
+          {description ? <p className="text-[13px] leading-5 text-white/75">{description}</p> : null}
+        </div>
+
+        <div className={`mx-3.5 mb-3.5 rounded-[10px] sm:mx-4 sm:mb-4 ${panelTone.body}`}>
+          {items.length ? (
+            variant === "technical" ? (
+              <TechnicalCareerNarrative items={items} />
+            ) : (
+            <div className="grid gap-2">
+              {items.map((item) => (
+                <PortfolioArtifactCard key={`${title}-${item.id}`} item={item} isEditMode={isEditMode} onEdit={onEdit} onRemove={onRemove} />
+              ))}
+            </div>
+            )
+          ) : (
+            <div className="rounded-[10px] border border-dashed border-slate-200 bg-white px-3 py-6 text-center text-[13px] leading-5 text-slate-500">
+              {emptyMessage}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PortfolioArtifactCard({
+  item,
+  isEditMode,
+  onEdit,
+  onRemove,
+}: {
+  item: ExperienceItem;
+  isEditMode: boolean;
+  onEdit: (experience: ExperienceItem) => void;
+  onRemove: (id: number) => void;
+}) {
+  return (
+    <div className="rounded-[10px] border border-slate-200 bg-white p-3.5 sm:p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
+          <p className="mt-0.5 text-[13px] leading-5 text-slate-500">
+            {item.organization} · {item.period}
+          </p>
+        </div>
+        {isEditMode ? (
+          <Button className="shrink-0 border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700" onClick={() => onEdit(item)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            수정
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,34%)] lg:items-start">
+        <div>
+          <p className="text-sm leading-6 text-slate-700">{summarizePortfolioDescription(item.description)}</p>
+          {item.highlight.length ? (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {item.highlight.slice(0, 6).map((tag) => (
+                <span key={`${item.id}-portfolio-${tag}`} className="rounded-[5px] border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] leading-none text-slate-600">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="grid gap-2">
+          {item.url ? <PortfolioLink url={item.url} /> : null}
+          {item.image ? (
+            <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+              <img src={item.image} alt={`${item.title} 이미지`} className="h-auto max-h-[320px] w-full object-contain" />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {isEditMode ? (
+        <div className="mt-3 flex justify-end">
+          <Button className="border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-rose-600" onClick={() => onRemove(item.id)}>
+            삭제
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PortfolioLink({ url }: { url: string }) {
+  let hostname = url;
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    hostname = url;
+  }
+
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-2 text-[12px] leading-4 text-slate-700">
+      <span className="min-w-0 truncate font-medium">{hostname}</span>
+      <span className="shrink-0 text-sky-700">열기</span>
+    </a>
+  );
+}
+
+function summarizePortfolioDescription(description: string) {
+  const firstParagraph = description
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)[0];
+
+  return firstParagraph || "수행 산출물과 관련 자료를 확인할 수 있는 포트폴리오 항목입니다.";
+}
+
+function TechnicalCareerNarrative({ items }: { items: ExperienceItem[] }) {
+  const { summary, companies } = buildTechnicalCareerNarrative(items);
+
+  return (
+    <article className="rounded-[10px] border border-slate-200 bg-white px-4 py-4 sm:px-5 sm:py-5">
+      <div>
+        <h3 className="text-base font-semibold leading-6 text-slate-950">Summary</h3>
+        <p className="mt-2 text-sm leading-7 text-slate-700">{summary}</p>
+      </div>
+
+      <div className="mt-5 space-y-4">
+        {companies.map((company) => (
+          <section key={company.organization} className="border-t border-slate-100 pt-4">
+            <h4 className="text-sm font-semibold leading-5 text-slate-950">{company.organization}</h4>
+            <p className="mt-1.5 text-sm leading-7 text-slate-700">{company.description}</p>
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function buildTechnicalCareerNarrative(items: ExperienceItem[]) {
+  const sortedItems = [...items].sort((left, right) => getExperiencePeriodScore(right.period) - getExperiencePeriodScore(left.period));
+  const grouped = new Map<string, ExperienceItem[]>();
+
+  for (const item of sortedItems) {
+    grouped.set(item.organization, [...(grouped.get(item.organization) ?? []), item]);
+  }
+
+  const topTags = getTopTechnicalTags(sortedItems, 8);
+  const tagSummary = topTags.length ? ` 특히 ${topTags.join(", ")} 영역을 중심으로 실무 경험을 확장해 왔습니다.` : "";
+  const summary = `정보보호 관리자 및 CISO/CPO 역할을 수행하며 보안 거버넌스, 인증 대응, 웹 모의해킹, 취약점 진단, OT·인프라 보안, 보안시스템 운영까지 폭넓게 경험했습니다.${tagSummary} 정책과 절차 수립에 그치지 않고 점검 자동화, 운영 체계 구축, 리스크 식별, 개선 과제 실행까지 이어가며 조직의 보안 수준을 실제 운영 관점에서 높여 왔습니다.`;
+  const companies = [...grouped.entries()].map(([organization, organizationItems]) => {
+    const titles = uniqueKoreanList(organizationItems.map((item) => item.title.trim()).filter(Boolean)).slice(0, 5);
+    const tags = getTopTechnicalTags(organizationItems, 5);
+    const titleSentence = titles.length ? `${titles.join(", ")} 등을 맡았습니다.` : "정보보호 관련 업무를 맡았습니다.";
+    const tagSentence = tags.length ? `주요 업무는 ${tags.join(", ")}를 중심으로 진행했습니다.` : "";
+
+    return {
+      organization,
+      description: `${organization}에서는 ${titleSentence} ${tagSentence}`.trim(),
+    };
+  });
+
+  return { summary, companies };
+}
+
+function uniqueKoreanList(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function getTopTechnicalTags(items: ExperienceItem[], limit: number) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    for (const tag of item.highlight) {
+      const normalizedTag = tag.trim();
+      if (!normalizedTag) continue;
+      counts.set(normalizedTag, (counts.get(normalizedTag) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "ko-KR"))
+    .slice(0, limit)
+    .map(([tag]) => tag);
+}
+
+function getExperiencePeriodScore(period: string) {
+  const matches = period.match(/\d{4}[./-]?\d{0,2}[./-]?\d{0,2}/g);
+  const target = matches?.[matches.length - 1] ?? period;
+  const digits = target.replace(/\D/g, "").padEnd(8, "0").slice(0, 8);
+  const score = Number.parseInt(digits, 10);
+  return Number.isFinite(score) ? score : 0;
 }
 
 function SettingsPanel({
@@ -821,6 +1152,14 @@ function safeParseVisitLogs(value: string | null): VisitLogItem[] {
   } catch {
     return [];
   }
+}
+
+function readLocalVisitCount(key: string) {
+  if (typeof window === "undefined") return 0;
+
+  const raw = window.localStorage.getItem(key);
+  const currentCount = raw ? Number.parseInt(raw, 10) : 0;
+  return Number.isFinite(currentCount) && currentCount > 0 ? currentCount : 0;
 }
 
 

@@ -187,7 +187,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1001,
     title: "CISO/CPO 기반 정보보호 관리체계 수립 및 ISMS 준비",
     organization: "(주)무하유",
-    period: "2024.06 - 현재",
+    period: "2024.06.01 - 현재",
     category: "인증",
     description:
       "CISO/CPO로서 ISMS 기준 정보보안 정책과 지침을 제정하고, 법적 준거성 검토, 위험평가, 보안성 검토 절차, 개인정보 위수탁 및 침해사고 대응 절차를 수립했습니다. 또한 DLP, 백신, Trivy, SonarQube, Datadog 기반의 보안 운영 체계를 구축했습니다.",
@@ -197,7 +197,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1002,
     title: "대외 웹 서비스 모의해킹 및 보안 교육 체계 운영",
     organization: "(주)무하유",
-    period: "2024.06 - 현재",
+    period: "2024.06.01 - 현재",
     category: "모의해킹",
     description:
       "대외 웹 서비스 18개 사이트를 대상으로 Burp Suite 기반 모의해킹을 수행하고, 연간 정보보호 교육 계획 수립, 신규 입사자 보안 교육, 개발보안 가이드 작성과 개발자 대상 교육을 운영했습니다.",
@@ -207,7 +207,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1003,
     title: "ITGC 통제 관리시스템 개발 및 운영",
     organization: "(주)무하유",
-    period: "2024.06 - 현재",
+    period: "2024.06.01 - 현재",
     category: "개발/자동화",
     description:
       "사내 정보보호 관리체계 운영 효율화를 위해 ITGC 통제 관리시스템을 설계하고 등록 프로세스를 정비했습니다. 통제 항목 관리, 점검 이력 추적, 증적 관리, 운영 현황 가시화를 중심으로 실무 운영 체계를 구축했습니다.",
@@ -217,7 +217,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1004,
     title: "정보보호 관리체계 운영 및 CSAP·ISO 인증 대응",
     organization: "알체라(Alchera Inc.)",
-    period: "2023.06 - 2024.04",
+    period: "2023.06.01 - 2024.04.30",
     category: "인증",
     description:
       "기업 정보보호 관리자 역할로 정보보호 규정 및 절차 제정, 임직원 보안 인식 교육, 개인정보처리방침 및 서약서 개정, 보안성 검토 절차 수립, VPN·방화벽·DLP·백신 운영과 함께 CSAP 및 ISO 27001/27017 인증 준비를 수행했습니다.",
@@ -227,7 +227,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1005,
     title: "업무용 소프트웨어 보안 및 비용 관리 체계 운영",
     organization: "알체라(Alchera Inc.)",
-    period: "2023.06 - 2024.04",
+    period: "2023.06.01 - 2024.04.30",
     category: "개발/자동화",
     description:
       "Google Workspace, GitHub, Atlassian, Slack, 그룹웨어, JetBrains, Figma 등 업무용 소프트웨어 라이선스를 관리하고, IP ACL 및 2단계 인증 강제 적용을 통해 접근 통제를 강화했습니다.",
@@ -237,7 +237,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1006,
     title: "롯데면세점 ISMS-P 인증(사후) 컨설팅 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2023.03 - 2023.05",
+    period: "2023.03.01 - 2023.05.31",
     category: "인증",
     description:
       "ISMS-P 322개 통제항목 기준 Gap 분석, 위험 분석 및 평가, 법적 준거성 검토, 결함 조치 가이드 검토와 영업점 현장 점검 체크리스트 개정을 주도했습니다.",
@@ -247,7 +247,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1007,
     title: "메디트 ISO 27001 갱신 및 글로벌 컴플라이언스 검토 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2023.01 - 2023.03",
+    period: "2023.01.01 - 2023.03.31",
     category: "인증",
     description:
       "ISO 27001 통제항목 기준 Gap 분석과 위험평가, 모의해킹 및 시스템 하드닝 리뷰를 수행하고 GDPR, HIPAA, CPRA, JP APPI 등 글로벌 컴플라이언스 준거성을 검토했습니다.",
@@ -257,7 +257,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1008,
     title: "CJ 푸드빌 ISMS-P 최초 인증 컨설팅 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2022.10 - 2022.12",
+    period: "2022.10.01 - 2022.12.31",
     category: "인증",
     description:
       "ISMS-P 322개 통제항목 기준 Gap 분석과 위험평가, 웹 서비스 모의해킹, 시스템 하드닝 리뷰, 정책 및 지침 개정, 시스템·개인정보 흐름도 작성을 수행했습니다.",
@@ -267,7 +267,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1009,
     title: "롯데 마트·슈퍼 ISMS 사후 인증 컨설팅 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2022.04 - 2022.08",
+    period: "2022.04.01 - 2022.08.31",
     category: "인증",
     description:
       "ISMS 통제항목 234개 기준 Gap 분석과 위험평가, 모의해킹 및 시스템 하드닝 리뷰, 정보보안 규정 개정, 법적 준거성 검토, 인증심사 대응 교육을 수행했습니다.",
@@ -277,7 +277,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1010,
     title: "발전소 OT 보안 마스터플랜 및 아키텍처 설계",
     organization: "삼정회계법인(KPMG)",
-    period: "2021.08 - 2021.12",
+    period: "2021.08.01 - 2021.12.31",
     category: "클라우드 보안",
     description:
       "대륜발전 및 별내에너지 발전소를 대상으로 관문 방화벽 정책 분석, Nozomi Guardian 기반 패킷 분석, 자산 식별, 네트워크 구성도 작성, OA/FA 망분리와 Purdue 모델 기반 OT 보안 아키텍처를 설계했습니다.",
@@ -287,7 +287,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1011,
     title: "LS산전 OT 보안체계 수립 컨설팅 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2020.11 - 2021.02",
+    period: "2020.11.01 - 2021.02.28",
     category: "클라우드 보안",
     description:
       "Nozomi Guardian 기반 OA/FA 네트워크 패킷 분석과 이상징후 분석을 수행하고, 중장기 OT 보안 마스터플랜과 글로벌 표준 기반 FA 보안 아키텍처 모델을 수립했습니다.",
@@ -297,7 +297,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1012,
     title: "SK실트론 OT 보안 마스터플랜 수립 PM",
     organization: "삼정회계법인(KPMG)",
-    period: "2020.08 - 2020.09",
+    period: "2020.08.01 - 2020.09.30",
     category: "클라우드 보안",
     description:
       "OA/FA 네트워크 분석과 보안 운영 현황 검토를 통해 망분리 설계안을 포함한 중장기 OT 보안 마스터플랜을 수립했습니다.",
@@ -307,7 +307,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1013,
     title: "위메프 보안기술팀 운영 및 보안성 검토 체계 수립",
     organization: "위메프",
-    period: "2019.05 - 2019.12",
+    period: "2019.05.01 - 2019.12.31",
     category: "개발/자동화",
     description:
       "보안기술팀 팀장으로 DB 접근제어와 소스코드 취약점 점검 솔루션 도입을 기획하고, 보안성 검토 절차와 체크리스트를 수립했으며 보안관제 고도화와 방화벽 정책 개선을 수행했습니다.",
@@ -317,7 +317,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1014,
     title: "평창동계올림픽 EMS 구축 및 OT 보안 솔루션 프리세일즈",
     organization: "대정에이앤지(주)",
-    period: "2017.10 - 2018.03",
+    period: "2017.10.01 - 2018.03.31",
     category: "개발/자동화",
     description:
       "OT 보안솔루션팀 팀장으로 제어시스템 보안 리서치와 프리세일즈를 수행했으며, 2018 평창동계올림픽 에너지 모니터링 시스템 구축 프로젝트를 리드했습니다. 또한 PLC 레더 프로그램과 Modbus 해킹 도구 개발 경험을 보유하고 있습니다.",
@@ -327,7 +327,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1015,
     title: "한국수자원공사 천안정수장 OT 보안솔루션 구축 및 운영",
     organization: "대정에이앤지(주)",
-    period: "2017.01 - 2017.12",
+    period: "2017.01.01 - 2017.12.31",
     category: "클라우드 보안",
     description:
       "국내 최초 기반시설 SCADA 시스템 보안솔루션 구축과 운영을 수행하고, 솔루션 데이터와 네트워크 패킷 분석으로 비식별 자산과 Multi Homed Network를 식별해 네트워크 분리를 강화했습니다.",
@@ -337,7 +337,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1016,
     title: "금융·항공·공공 분야 모의해킹 및 개인정보보호 컨설팅",
     organization: "삼정회계법인(KPMG)",
-    period: "2014.07 - 2016.09",
+    period: "2014.07.01 - 2016.09.30",
     category: "모의해킹",
     description:
       "아시아나 에바카스 PCI-DSS, NH농협 개인정보보호, KB국민은행 보안 컨설팅, KT 차세대 시스템 보안성 검토, 라이나생명 및 BNP 파리바카디프 모의해킹 등 다양한 프로젝트를 PL/PM으로 수행했습니다.",
@@ -347,7 +347,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1017,
     title: "CJ 그룹 웹 모의해킹 및 보안시스템 운영",
     organization: "씨제이올리브네트웍스(주)",
-    period: "2013.09 - 2014.06",
+    period: "2013.09.01 - 2014.06.30",
     category: "모의해킹",
     description:
       "송도 IDC IT 보안팀에서 FireEye, ShellMonitor, ESM 탐지 룰 고도화, 침해사고 분석 보고서 작성과 함께 CJ 계열사 정기 웹 모의해킹과 YTN 통합보도정보시스템 모의해킹을 수행했습니다.",
@@ -357,7 +357,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1018,
     title: "침해사고 대응 및 대학·언론사 모의해킹",
     organization: "주식회사 윈스",
-    period: "2012.06 - 2013.09",
+    period: "2012.06.01 - 2013.09.30",
     category: "모의해킹",
     description:
       "3.20 전산대란과 6.25 사이버테러 대응 분석에 참여하고, 한양대학교와 언론사, 공공기관, 기업 웹 서비스를 대상으로 모의해킹과 취약점 진단을 수행했습니다. SQLMAP Injection 패턴과 WAF 우회 패턴 연구도 병행했습니다.",
@@ -367,7 +367,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1019,
     title: "국가 기반시설 취약점 분석 및 평가",
     organization: "한전케이디엔(주)",
-    period: "2010.07 - 2012.06",
+    period: "2010.07.01 - 2012.06.30",
     category: "취약점 진단",
     description:
       "지식경제부 사이버안전센터 소속으로 발전기관과 에너지 공기업 기반시설을 대상으로 워크스테이션 시스템 취약점 점검, 방화벽 정책 분석, Multi Homed Network 식별, 망분리 적정성 검토를 수행했습니다.",
@@ -377,7 +377,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1020,
     title: "SKT 인프라 보안 취약점 진단 및 웹 모의해킹",
     organization: "엔코딩패스 주식회사",
-    period: "2008.07 - 2010.07",
+    period: "2008.07.01 - 2010.07.31",
     category: "취약점 진단",
     description:
       "SKT IT 보안팀 파견 인력으로 서버, WEB/WAS, DBMS, 네트워크 취약점 진단과 내·외부 웹 서비스 모의해킹을 수행하고 점검 가이드와 자동화 스크립트를 고도화했습니다.",
@@ -387,7 +387,7 @@ export const defaultExperiences: ExperienceItem[] = [
     id: 1021,
     title: "웹방화벽 시그니처 룰 개발 및 웹 취약점 연구",
     organization: "(주)모니터랩",
-    period: "2007.01 - 2008.07",
+    period: "2007.01.01 - 2008.07.31",
     category: "개발/자동화",
     description:
       "위협분석팀 연구원으로 웹 취약점 스캐너 개발, GS 인증 참여, 허니팟 기반 공격 패턴 분석, ModSecurity 및 WebKnight 시그니처 룰 개발과 개발자 대상 보안 교육을 수행했습니다.",
@@ -401,10 +401,10 @@ export const emptyExperienceForm: ExperienceFormValues = {
   period: "",
   category: "모의해킹",
   description: "",
-  highlight: "",
   url: "",
   image: "",
   featured: false,
+  documentType: "technical",
 };
 
 export const emptyCompanyForm: CompanyFormValues = {

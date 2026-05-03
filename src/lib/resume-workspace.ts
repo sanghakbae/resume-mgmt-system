@@ -56,8 +56,9 @@ function normalizeCompanyPosition(position?: string) {
 }
 
 function mergeExperiences(existing: ExperienceItem[], defaults: ExperienceItem[]) {
-  const seen = new Set(existing.map((item) => `${item.organization}::${item.title}::${item.period}`));
-  return [...existing, ...defaults.filter((item) => !seen.has(`${item.organization}::${item.title}::${item.period}`))];
+  const dedupedExisting = dedupeExperienceItems(existing);
+  const seen = new Set(dedupedExisting.map(getExperienceDedupeKey));
+  return [...dedupedExisting, ...defaults.filter((item) => !seen.has(getExperienceDedupeKey(item)))];
 }
 
 function restoreProtectedDefaultExperiences(existing: ExperienceItem[], defaults: ExperienceItem[]) {
@@ -82,11 +83,36 @@ function ensureUniqueExperienceIds(items: ExperienceItem[]) {
   });
 }
 
+function getExperienceDedupeKey(item: ExperienceItem) {
+  return [
+    normalizeCompanyName(item.organization).trim(),
+    item.title.trim(),
+    normalizeExperiencePeriod(item.period).trim(),
+    item.description.trim().replace(/\s+/g, " "),
+  ].join("::");
+}
+
+function dedupeExperienceItems(items: ExperienceItem[]) {
+  const seen = new Set<string>();
+  const deduped: ExperienceItem[] = [];
+
+  for (const item of items) {
+    const key = getExperienceDedupeKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
+
 function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
   const normalizedItem: ExperienceItem = {
     ...item,
     organization: normalizeCompanyName(item.organization),
+    period: normalizeExperiencePeriod(item.period),
     featured: item.featured ?? false,
+    documentType: normalizeExperienceDocumentType(item),
   };
   const highlight = generateSecurityTags({
     title: normalizedItem.title,
@@ -107,6 +133,52 @@ function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
   };
 }
 
+function normalizeExperienceDocumentType(item: ExperienceItem) {
+  if (item.documentType === "portfolio" || item.documentType === "technical") {
+    return item.documentType;
+  }
+
+  return item.url || item.image ? "portfolio" : "technical";
+}
+
+function normalizeExperiencePeriod(period: string) {
+  if (!period.trim()) return period;
+
+  return period
+    .split("/")
+    .map((range) => normalizePeriodRange(range.trim()))
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function normalizePeriodRange(range: string) {
+  const separator = range.includes("~") ? "~" : "-";
+  const [startRaw = "", endRaw = ""] = range.split(separator).map((part) => part.trim());
+  const start = normalizePeriodPoint(startRaw, "start");
+  const end = endRaw.includes("현재") ? "현재" : normalizePeriodPoint(endRaw, "end");
+
+  if (!start && !end) return "";
+  if (!start) return end;
+  if (!end) return start;
+  return `${start} - ${end}`;
+}
+
+function normalizePeriodPoint(value: string, edge: "start" | "end") {
+  if (!value || value.includes("현재")) return value;
+
+  const matched = value.match(/(\d{4})\D+(\d{1,2})(?:\D+(\d{1,2}))?/);
+  if (!matched) return value;
+
+  const [, year, rawMonth, rawDay] = matched;
+  const month = rawMonth.padStart(2, "0");
+  const day = rawDay?.padStart(2, "0") ?? (edge === "start" ? "01" : getLastDayOfMonth(Number(year), Number(month)));
+  return `${year}.${month}.${day}`;
+}
+
+function getLastDayOfMonth(year: number, month: number) {
+  return String(new Date(year, month, 0).getDate()).padStart(2, "0");
+}
+
 function mergeWorkspaceWithDefaults(
   workspace: ResumeWorkspace,
   defaultProfile: Profile,
@@ -119,7 +191,7 @@ function mergeWorkspaceWithDefaults(
     organization: normalizeCompanyName(company.organization),
     position: normalizeCompanyPosition(company.position),
   }));
-  const normalizedExperiences = (workspace.experiences ?? []).map(normalizeExperienceCategory);
+  const normalizedExperiences = dedupeExperienceItems(workspace.experiences ?? []).map(normalizeExperienceCategory);
   const migratedExperiences = restoreProtectedDefaultExperiences(normalizedExperiences, defaultExperiences).map(normalizeExperienceCategory);
 
   return {
@@ -133,8 +205,8 @@ function mergeWorkspaceWithDefaults(
         : mergeCompanyProfiles([], defaultCompanies),
     experiences:
       normalizedExperiences.length > 0
-        ? ensureUniqueExperienceIds(migratedExperiences)
-        : ensureUniqueExperienceIds(defaultExperiences.map(normalizeExperienceCategory)),
+        ? ensureUniqueExperienceIds(dedupeExperienceItems(migratedExperiences))
+        : ensureUniqueExperienceIds(dedupeExperienceItems(defaultExperiences).map(normalizeExperienceCategory)),
   };
 }
 
@@ -220,6 +292,11 @@ export async function loadWorkspace(
 }
 
 export async function saveWorkspace(workspace: ResumeWorkspace) {
+  const normalizedWorkspace: ResumeWorkspace = {
+    ...workspace,
+    experiences: dedupeExperienceItems(workspace.experiences).map(normalizeExperienceCategory),
+  };
+
   if (isSupabaseConfigured && supabase) {
     const {
       data: { user },
@@ -234,10 +311,10 @@ export async function saveWorkspace(workspace: ResumeWorkspace) {
       {
         owner_id: workspace.ownerId,
         editor_email: editorEmail,
-        profile: workspace.profile,
-        companies: workspace.companies,
-        experiences: workspace.experiences,
-        updated_at: workspace.updatedAt,
+        profile: normalizedWorkspace.profile,
+        companies: normalizedWorkspace.companies,
+        experiences: normalizedWorkspace.experiences,
+        updated_at: normalizedWorkspace.updatedAt,
       },
       { onConflict: "owner_id" },
     );
@@ -257,7 +334,7 @@ export async function saveWorkspace(workspace: ResumeWorkspace) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(workspace),
+      body: JSON.stringify(normalizedWorkspace),
     });
 
     if (!response.ok) {
@@ -271,7 +348,7 @@ export async function saveWorkspace(workspace: ResumeWorkspace) {
     throw new Error("데이터베이스 저장소가 설정되지 않아 이력서 데이터를 저장할 수 없습니다.");
   }
 
-  window.localStorage.setItem(getLocalWorkspaceKey(workspace.ownerId), JSON.stringify(workspace));
+  window.localStorage.setItem(getLocalWorkspaceKey(workspace.ownerId), JSON.stringify(normalizedWorkspace));
 }
 
 export function listLocalWorkspaceSummaries(): WorkspaceSummary[] {

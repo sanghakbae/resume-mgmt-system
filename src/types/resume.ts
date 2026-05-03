@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
 export type ResumeCategory = "모의해킹" | "취약점 진단" | "보안 컨설팅" | "클라우드 보안" | "개발/자동화" | "인증";
+export type ExperienceDocumentType = "portfolio" | "technical";
 
 export type ExperienceItem = {
   id: number;
@@ -13,6 +14,7 @@ export type ExperienceItem = {
   url?: string;
   image?: string;
   featured?: boolean;
+  documentType?: ExperienceDocumentType;
 };
 
 export type Profile = {
@@ -40,10 +42,10 @@ export type ExperienceFormValues = {
   period: string;
   category: ResumeCategory;
   description: string;
-  highlight: string;
   url: string;
   image: string;
   featured: boolean;
+  documentType: ExperienceDocumentType;
 };
 
 export type ExperienceValidationErrors = Partial<Record<keyof ExperienceFormValues, string>>;

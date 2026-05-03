@@ -159,18 +159,12 @@
   }
 
   .print-content,
-  .print-content * {
+  .print-content *,
+  .resume-dashboard-surface,
+  .resume-positioning-card,
+  .resume-stat {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-  }
-
-  .resume-app .grid {
-    display: block !important;
-  }
-
-  .resume-app .shadow-sm,
-  .resume-app [class*="shadow-"] {
-    box-shadow: none !important;
   }
 
   .resume-skill-shield__frame {
