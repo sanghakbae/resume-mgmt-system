@@ -144,7 +144,13 @@ export default function App() {
   const activeOwnerId = isPublicResumeMode ? primaryWorkspaceId : currentWorkspaceId;
   const effectiveIsEditMode = canEdit && isEditMode;
   const canSaveWorkspace = canEdit;
-  const fallbackOwnerIds = useMemo(() => (user ? [user.sub, "public-resume"] : ["public-resume"]), [user]);
+  const fallbackOwnerIds = useMemo(
+    () =>
+      [primaryWorkspaceId, normalizedUserEmail, user?.sub]
+        .filter((ownerId): ownerId is string => Boolean(ownerId))
+        .filter((ownerId, index, ownerIds) => ownerIds.indexOf(ownerId) === index),
+    [normalizedUserEmail, primaryWorkspaceId, user?.sub],
+  );
   const {
     profile,
     setProfile,
