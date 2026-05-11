@@ -13,6 +13,7 @@ type ExperienceCardProps = {
 
 export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: ExperienceCardProps) {
   const linkPreview = getLinkPreview(item.url);
+  const images = getExperienceImages(item);
 
   return (
     <div className="rounded-[10px] border border-slate-200 p-3.5 sm:p-4" data-export-project-card>
@@ -74,9 +75,13 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
             </div>
           ) : null}
 
-          {item.image ? (
-            <div className="mt-3 w-full overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-              <img src={item.image} alt={`${item.title} 이미지`} className="h-auto max-h-[374px] w-full object-contain" />
+          {images.length ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {images.map((image, index) => (
+                <div key={`${item.id}-image-${index}`} className="w-full overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+                  <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[374px] w-full object-contain" />
+                </div>
+              ))}
             </div>
           ) : null}
         </div>
@@ -105,6 +110,10 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
       )}
     </div>
   );
+}
+
+function getExperienceImages(item: ExperienceItem) {
+  return Array.from(new Set([...(item.images ?? []), item.image].filter((image): image is string => Boolean(image))));
 }
 
 function openProjectPopup(event: MouseEvent<HTMLAnchorElement>, url: string) {

@@ -55,17 +55,6 @@ function normalizeCompanyPosition(position?: string) {
   return position;
 }
 
-function mergeExperiences(existing: ExperienceItem[], defaults: ExperienceItem[]) {
-  const dedupedExisting = dedupeExperienceItems(existing);
-  const seen = new Set(dedupedExisting.map(getExperienceDedupeKey));
-  return [...dedupedExisting, ...defaults.filter((item) => !seen.has(getExperienceDedupeKey(item)))];
-}
-
-function restoreProtectedDefaultExperiences(existing: ExperienceItem[], defaults: ExperienceItem[]) {
-  const protectedDefaults = defaults.filter((item) => item.title === "ITGC 통제 관리시스템 개발 및 운영");
-  return mergeExperiences(existing, protectedDefaults);
-}
-
 function ensureUniqueExperienceIds(items: ExperienceItem[]) {
   const seen = new Set<number>();
   let nextId = items.reduce((max, item) => Math.max(max, item.id), 0) + 1;
@@ -107,10 +96,13 @@ function dedupeExperienceItems(items: ExperienceItem[]) {
 }
 
 function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
+  const images = normalizeExperienceImages(item);
   const normalizedItem: ExperienceItem = {
     ...item,
     organization: normalizeCompanyName(item.organization),
     period: normalizeExperiencePeriod(item.period),
+    image: images[0],
+    images: images.length ? images : undefined,
     featured: item.featured ?? false,
     documentType: normalizeExperienceDocumentType(item),
   };
@@ -133,12 +125,16 @@ function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
   };
 }
 
+function normalizeExperienceImages(item: ExperienceItem) {
+  return Array.from(new Set([...(item.images ?? []), item.image].filter((image): image is string => Boolean(image))));
+}
+
 function normalizeExperienceDocumentType(item: ExperienceItem) {
   if (item.documentType === "portfolio" || item.documentType === "technical") {
     return item.documentType;
   }
 
-  return item.url || item.image ? "portfolio" : "technical";
+  return item.url || item.image || item.images?.length ? "portfolio" : "technical";
 }
 
 function normalizeExperiencePeriod(period: string) {
@@ -192,7 +188,6 @@ function mergeWorkspaceWithDefaults(
     position: normalizeCompanyPosition(company.position),
   }));
   const normalizedExperiences = dedupeExperienceItems(workspace.experiences ?? []).map(normalizeExperienceCategory);
-  const migratedExperiences = restoreProtectedDefaultExperiences(normalizedExperiences, defaultExperiences).map(normalizeExperienceCategory);
 
   return {
     ...workspace,
@@ -205,7 +200,7 @@ function mergeWorkspaceWithDefaults(
         : mergeCompanyProfiles([], defaultCompanies),
     experiences:
       normalizedExperiences.length > 0
-        ? ensureUniqueExperienceIds(dedupeExperienceItems(migratedExperiences))
+        ? ensureUniqueExperienceIds(dedupeExperienceItems(normalizedExperiences))
         : ensureUniqueExperienceIds(dedupeExperienceItems(defaultExperiences).map(normalizeExperienceCategory)),
   };
 }

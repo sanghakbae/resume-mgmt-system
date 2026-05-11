@@ -13,6 +13,7 @@ export type ExperienceItem = {
   highlight: string[];
   url?: string;
   image?: string;
+  images?: string[];
   featured?: boolean;
   documentType?: ExperienceDocumentType;
 };
@@ -44,6 +45,7 @@ export type ExperienceFormValues = {
   description: string;
   url: string;
   image: string;
+  images: string[];
   featured: boolean;
   documentType: ExperienceDocumentType;
 };

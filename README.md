@@ -146,6 +146,7 @@ VITE_ADMIN_EMAILS=admin@example.com
 VITE_EDITOR_EMAILS=totoriverce@gmail.com
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_ASSET_API_BASE_URL=https://your-r2-worker.example.workers.dev
 ```
 
 ### 변수 설명
@@ -170,6 +171,17 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
   - Supabase를 사용할 때 프로젝트 URL
 - `VITE_SUPABASE_ANON_KEY`
   - Supabase를 사용할 때 anon key
+- `VITE_ASSET_API_BASE_URL`
+  - 첨부 파일을 Cloudflare R2에 저장할 때 사용하는 Worker API 주소
+  - 설정되면 프로필 사진과 수행 업무 이미지는 Supabase Storage 대신 R2 Worker로 업로드됨
+  - R2 Access Key/Secret은 프론트엔드에 넣지 않고 Worker/R2 바인딩에서만 관리
+
+## Cloudflare R2 첨부 파일 저장
+
+- R2 버킷 이름은 `resume`을 사용합니다.
+- Worker 설정은 `wrangler.toml`과 `worker/r2-assets-worker.js`에 있습니다.
+- Worker는 `POST /api/assets/upload`로 이미지를 업로드하고, `GET /assets/{key}`로 공개 이미지를 제공합니다.
+- Cloudflare에서 Worker에 `RESUME_BUCKET` R2 바인딩을 연결한 뒤 배포 URL을 `VITE_ASSET_API_BASE_URL`에 넣으면 됩니다.
 
 ## 권한 요약
 

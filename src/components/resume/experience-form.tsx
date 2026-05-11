@@ -19,7 +19,7 @@ type ExperienceFormProps = {
   onCancel: () => void;
   onEdit: (experience: ExperienceItem) => void;
   onRemove: (id: number) => void;
-  onUploadImage?: (file: File) => Promise<void>;
+  onUploadImages?: (files: File[]) => Promise<void>;
 };
 
 export function ExperienceForm({
@@ -35,7 +35,7 @@ export function ExperienceForm({
   onCancel,
   onEdit,
   onRemove,
-  onUploadImage,
+  onUploadImages,
 }: ExperienceFormProps) {
   const sortedExperiences = [...experiences].sort((left, right) => getExperiencePeriodScore(right.period) - getExperiencePeriodScore(left.period));
   const periodDates = parsePeriodToDateInputs(form.period);
@@ -45,26 +45,33 @@ export function ExperienceForm({
   };
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (files.some((file) => !file.type.startsWith("image/"))) {
       event.target.value = "";
       return;
     }
 
-    if (onUploadImage && ownerId) {
-      await onUploadImage(file);
+    if (onUploadImages && ownerId) {
+      await onUploadImages(files);
       event.target.value = "";
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateField("image", typeof reader.result === "string" ? reader.result : "");
-    };
-    reader.readAsDataURL(file);
+    const dataUrls = await Promise.all(files.map(readFileAsDataUrl));
+    onChange((prev) => {
+      const images = [...prev.images, ...dataUrls];
+      return { ...prev, image: images[0] ?? "", images };
+    });
     event.target.value = "";
+  };
+
+  const removeImage = (imageToRemove: string) => {
+    onChange((prev) => {
+      const images = prev.images.filter((image) => image !== imageToRemove);
+      return { ...prev, image: images[0] ?? "", images };
+    });
   };
 
   return (
@@ -185,18 +192,30 @@ export function ExperienceForm({
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-[13px] font-medium leading-5 text-slate-700">
                   <ImagePlus className="h-4 w-4" />
                   {isUploading ? "이미지 업로드 중" : "이미지 업로드"}
-                  <input type="file" accept="image/*,.gif" className="hidden" onChange={(event) => void handleImageChange(event)} disabled={isUploading} />
+                  <input type="file" accept="image/*,.gif" multiple className="hidden" onChange={(event) => void handleImageChange(event)} disabled={isUploading} />
                 </label>
-                <p className="text-[12px] leading-4 text-slate-500">PNG, JPG, GIF 모두 가능하며 폼 안에서 바로 미리보기 됩니다.</p>
-                {form.image ? (
-                  <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-                    <img src={form.image} alt="업무 미리보기" className="h-auto max-h-56 w-full object-contain" />
+                <p className="text-[12px] leading-4 text-slate-500">여러 이미지를 한 번에 선택할 수 있으며 PNG, JPG, GIF 모두 가능합니다.</p>
+                {form.images.length ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {form.images.map((image, index) => (
+                      <div key={`${image}-${index}`} className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+                        <img src={image} alt={`업무 미리보기 ${index + 1}`} className="h-auto max-h-44 w-full object-contain" />
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-center gap-1.5 border-t border-slate-200 bg-white px-2 py-1.5 text-[12px] font-medium leading-4 text-rose-600"
+                          onClick={() => removeImage(image)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          이미지 제거
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
-                {form.image ? (
-                  <Button className="w-full border border-slate-200 bg-white px-4 py-2 text-slate-700 sm:w-auto" onClick={() => updateField("image", "")}>
+                {form.images.length ? (
+                  <Button className="w-full border border-slate-200 bg-white px-4 py-2 text-slate-700 sm:w-auto" onClick={() => onChange((prev) => ({ ...prev, image: "", images: [] }))}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    이미지 제거
+                    전체 이미지 제거
                   </Button>
                 ) : null}
               </div>
@@ -332,4 +351,13 @@ function formatDateForPeriod(value: string) {
   const [year, month, day] = value.split("-");
   if (!year || !month || !day) return "";
   return `${year}.${month}.${day}`;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(reader.error ?? new Error("이미지를 읽지 못했습니다."));
+    reader.readAsDataURL(file);
+  });
 }

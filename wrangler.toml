@@ -1,0 +1,13 @@
+name = "resume-assets"
+main = "worker/r2-assets-worker.js"
+compatibility_date = "2026-05-11"
+account_id = "02f0426678a5977483be4b2210cdf293"
+
+[vars]
+SUPABASE_URL = "https://gfybyxbrmkwbzuyhyqiv.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_Cd-7SADAjF_J5vEo9QkmAA_Jz2_diWz"
+EDITOR_EMAILS = "totoriverce@gmail.com"
+
+[[r2_buckets]]
+binding = "RESUME_BUCKET"
+bucket_name = "resume"

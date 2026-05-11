@@ -27,6 +27,7 @@ export function useResumeWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
+  const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const storageMode = useMemo(() => getStorageMode(), []);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export function useResumeWorkspace({
 
     let active = true;
     setIsLoading(true);
+    setHasLoadedWorkspace(false);
 
     loadWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences, fallbackOwnerIds)
       .then((workspace) => {
@@ -46,10 +48,12 @@ export function useResumeWorkspace({
         setExperiences(workspace.experiences);
         setUpdatedAt(workspace.updatedAt);
         setError(null);
+        setHasLoadedWorkspace(true);
       })
       .catch(() => {
         if (!active) return;
         setError("이력서 데이터를 불러오지 못했습니다.");
+        setHasLoadedWorkspace(false);
       })
       .finally(() => {
         if (!active) return;
@@ -63,6 +67,7 @@ export function useResumeWorkspace({
 
   useEffect(() => {
     if (!ownerId || isLoading) return;
+    if (!hasLoadedWorkspace) return;
     if (!canSave) return;
 
     const timer = window.setTimeout(() => {
@@ -94,7 +99,7 @@ export function useResumeWorkspace({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [canSave, companies, experiences, isLoading, ownerId, profile]);
+  }, [canSave, companies, experiences, hasLoadedWorkspace, isLoading, ownerId, profile]);
 
   useEffect(() => {
     if (!showSavedNotice) return;
@@ -112,6 +117,7 @@ export function useResumeWorkspace({
     setProfile(defaultProfile);
     setCompanies(defaultCompanies);
     setExperiences(defaultExperiences);
+    setHasLoadedWorkspace(true);
   };
 
   const listWorkspaces = useCallback(() => listLocalWorkspaceSummaries(), []);
@@ -150,6 +156,7 @@ export function useResumeWorkspace({
       setCompanies(workspace.companies);
       setExperiences(workspace.experiences);
       setUpdatedAt(workspace.updatedAt);
+      setHasLoadedWorkspace(true);
       setIsSaving(true);
 
       try {

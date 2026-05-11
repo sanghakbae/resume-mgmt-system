@@ -176,9 +176,9 @@ export const defaultProfile: Profile = {
   specialty: "ISMS / ISMS-P / ISO 27001 / CSAP / IT·OT 보안 / 모의해킹 / 취약점 진단",
   military: "육군 / 보병 / 2001.08.04 ~ 2004.07.13 / 병역특례(소집해제)",
   industries: "AI 서비스 / 제조 / 유통 / 금융 / 공공 / 발전 / 에너지 / 이커머스",
-  hobby: "",
+  hobby: "사진 촬영",
   hobbyUrl: "",
-  contactEmail: "",
+  contactEmail: "totoriverce@naver.com",
   certifications: "CISSP / LPIC Level 1 / 정보처리기사 / 전자계산기기능사 / 전자기기기능사 / Nozomi Networks Certified Engineer",
 };
 
@@ -403,6 +403,7 @@ export const emptyExperienceForm: ExperienceFormValues = {
   description: "",
   url: "",
   image: "",
+  images: [],
   featured: false,
   documentType: "technical",
 };

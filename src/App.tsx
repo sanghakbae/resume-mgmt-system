@@ -9,13 +9,13 @@ import { ExperienceCard } from "@/components/resume/experience-card";
 import { ExperienceForm } from "@/components/resume/experience-form";
 import { ProfileForm } from "@/components/resume/profile-form";
 import { CareerDashboard, ResumePreview } from "@/components/resume/resume-preview";
-import { categoryOptions, defaultCompanyProfiles, defaultExperiences, defaultProfile, emptyCompanyForm, emptyExperienceForm } from "@/data/resume";
+import { defaultCompanyProfiles, defaultExperiences, defaultProfile, emptyCompanyForm, emptyExperienceForm } from "@/data/resume";
 import { useGoogleAuth } from "@/hooks/use-google-auth";
 import { useResumeWorkspace } from "@/hooks/use-resume-workspace";
 import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
-import { isSupabaseConfigured, uploadResumeAsset } from "@/lib/supabase";
+import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/supabase";
 import { getPublicVisitCount, incrementPublicVisitCount, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
@@ -25,7 +25,6 @@ import type {
   ExperienceDocumentType,
   ExperienceItem,
   ExperienceValidationErrors,
-  ResumeCategory,
   VisitLogItem,
 } from "@/types/resume";
 
@@ -104,13 +103,18 @@ function dedupeExperienceItems(items: ExperienceItem[]) {
   return deduped;
 }
 
+function getExperienceImages(item: ExperienceItem) {
+  return Array.from(new Set([...(item.images ?? []), item.image].filter((image): image is string => Boolean(image))));
+}
+
 export default function App() {
   const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
   const isMobilePreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mobilePreview") === "1";
   const adminEmails = parseEnvEmailList(import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
   const editorEmails = parseEnvEmailList(import.meta.env.VITE_EDITOR_EMAILS as string | undefined);
-  const primaryWorkspaceId = (editorEmails[0] ?? adminEmails[0] ?? DEFAULT_PRIMARY_WORKSPACE_ID).toLowerCase();
+  const configuredWorkspaceId = (import.meta.env.VITE_PRIMARY_WORKSPACE_ID as string | undefined)?.trim();
+  const primaryWorkspaceId = (configuredWorkspaceId || DEFAULT_PRIMARY_WORKSPACE_ID).toLowerCase();
   const allowedEmails = isPublicResumeMode ? [] : adminEmails;
   const isLocalEditorMode = !isPublicResumeMode;
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth({
@@ -242,20 +246,9 @@ export default function App() {
     };
   }, [activeOwnerId, isLoading, isPublicResumeMode, profile.name, user]);
 
-  const groupedExperiences = useMemo(() => {
-    const groups = new Map<ResumeCategory, ExperienceItem[]>();
-
-    for (const item of experiences) {
-      const current = groups.get(item.category) ?? [];
-      current.push(item);
-      groups.set(item.category, current);
-    }
-
-    return groups;
-  }, [experiences]);
   const allExperiences = useMemo(
-    () => categoryOptions.flatMap((category) => groupedExperiences.get(category) ?? []),
-    [groupedExperiences],
+    () => dedupeExperienceItems(experiences).sort((left, right) => getExperiencePeriodScore(right.period) - getExperiencePeriodScore(left.period)),
+    [experiences],
   );
   const portfolioExperiences = useMemo(() => dedupeExperienceItems(allExperiences), [allExperiences]);
   const technicalExperiences = useMemo(() => dedupeExperienceItems(allExperiences.filter((item) => isExperienceVisibleInDocument(item, "technical"))), [allExperiences]);
@@ -354,7 +347,8 @@ export default function App() {
       description: form.description,
       highlight: autoTags,
       url: form.url.trim() || undefined,
-      image: form.image || undefined,
+      image: form.images[0] || form.image || undefined,
+      images: form.images.length ? form.images : form.image ? [form.image] : undefined,
       featured: form.featured,
       documentType: form.documentType,
     };
@@ -383,7 +377,8 @@ export default function App() {
       category: item.category,
       description: item.description,
       url: item.url ?? "",
-      image: item.image ?? "",
+      image: getExperienceImages(item)[0] ?? "",
+      images: getExperienceImages(item),
       featured: item.featured ?? false,
       documentType: item.documentType ?? "technical",
     });
@@ -449,9 +444,9 @@ export default function App() {
     try {
       const preparedFile = await prepareProfilePhoto(file);
 
-      if (!isSupabaseConfigured) {
+      if (!isAssetUploadConfigured) {
         if (isPublicResumeMode) {
-          throw new Error("Supabase 저장소가 설정되지 않아 사진을 저장할 수 없습니다.");
+          throw new Error("첨부 파일 저장소가 설정되지 않아 사진을 저장할 수 없습니다.");
         }
         const dataUrl = await readFileAsDataUrl(preparedFile);
         setProfile((prev) => ({ ...prev, photo: dataUrl, photoPositionX: 50, photoPositionY: 50, photoScale: 1.08 }));
@@ -467,22 +462,29 @@ export default function App() {
     }
   };
 
-  const uploadExperienceImage = async (file: File) => {
+  const uploadExperienceImages = async (files: File[]) => {
+    if (!files.length) return;
     setIsUploadingExperienceImage(true);
     setAssetUploadError(null);
 
     try {
-      if (!isSupabaseConfigured) {
+      if (!isAssetUploadConfigured) {
         if (isPublicResumeMode) {
-          throw new Error("Supabase 저장소가 설정되지 않아 이미지를 저장할 수 없습니다.");
+          throw new Error("첨부 파일 저장소가 설정되지 않아 이미지를 저장할 수 없습니다.");
         }
-        const dataUrl = await readFileAsDataUrl(file);
-        setForm((prev) => ({ ...prev, image: dataUrl }));
+        const dataUrls = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+        setForm((prev) => {
+          const images = [...(prev.images ?? []), ...dataUrls];
+          return { ...prev, image: images[0] ?? "", images };
+        });
         return;
       }
 
-      const publicUrl = await uploadResumeAsset(file, activeOwnerId, "experience");
-      setForm((prev) => ({ ...prev, image: publicUrl }));
+      const publicUrls = await Promise.all(files.map((file) => uploadResumeAsset(file, activeOwnerId, "experience")));
+      setForm((prev) => {
+        const images = [...(prev.images ?? []), ...publicUrls];
+        return { ...prev, image: images[0] ?? "", images };
+      });
     } catch (uploadError) {
       setAssetUploadError(uploadError instanceof Error ? uploadError.message : "업무 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도하세요.");
     } finally {
@@ -736,7 +738,7 @@ export default function App() {
                       onCancel={resetExperienceForm}
                       onEdit={startEditingExperience}
                       onRemove={removeExperience}
-                      onUploadImage={uploadExperienceImage}
+                      onUploadImages={uploadExperienceImages}
                     />
                   ) : null}
                   {selectedEditorSection === "portfolio" ? (
@@ -913,6 +915,8 @@ function PortfolioArtifactCard({
   onEdit: (experience: ExperienceItem) => void;
   onRemove: (id: number) => void;
 }) {
+  const images = getExperienceImages(item);
+
   return (
     <div className="rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,34%)] lg:items-start">
@@ -956,9 +960,13 @@ function PortfolioArtifactCard({
 
         <div className="grid gap-2">
           {item.url ? <PortfolioLink url={item.url} /> : null}
-          {item.image ? (
-            <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-              <img src={item.image} alt={`${item.title} 이미지`} className="h-auto max-h-[320px] w-full object-contain" />
+          {images.length ? (
+            <div className="grid gap-2">
+              {images.map((image, index) => (
+                <div key={`${item.id}-portfolio-image-${index}`} className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+                  <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[320px] w-full object-contain" />
+                </div>
+              ))}
             </div>
           ) : null}
         </div>
