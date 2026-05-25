@@ -40,7 +40,7 @@ export function ResumePreview({
           data-export-intro
         >
           <div className={`flex flex-col ${isCompactHeader ? "items-center gap-0.5" : "gap-3"}`}>
-            <div className="mx-auto flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100 sm:mx-0 sm:h-40 sm:w-40">
+            <div className="mx-auto flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100 sm:mx-0 sm:h-40 sm:w-40">
               {profile.photo ? (
                 <img
                   src={profile.photo}
@@ -74,7 +74,7 @@ export function ResumePreview({
 
         <div className="mt-3 space-y-3 md:mt-6 md:space-y-6">
           {companyGroups.map(({ company, items }) => (
-            <section key={company.organization} className="overflow-hidden rounded-[18px] border border-slate-200 bg-white" data-export-company>
+            <section key={company.organization} className="overflow-hidden rounded-[10px] border border-slate-200 bg-white" data-export-company>
               <div className="border-b border-slate-800 bg-slate-900 px-3.5 py-3 text-white sm:px-4">
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -127,7 +127,7 @@ export function ResumePreview({
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[12px] border border-dashed border-slate-300 bg-white px-3 py-4 text-[13px] leading-5 text-slate-500">
+                  <div className="rounded-[10px] border border-dashed border-slate-300 bg-white px-3 py-4 text-[13px] leading-5 text-slate-500">
                     아직 연결된 수행 업무가 없습니다. 편집 모드에서 이 회사에 프로젝트를 추가하면 여기에 표시됩니다.
                   </div>
                 )}
@@ -256,8 +256,8 @@ export function CareerDashboard({
   ] as const;
 
   return (
-    <section className="overflow-hidden rounded-[16px] border-2 border-black bg-white">
-      <div className="resume-dashboard-surface rounded-[14px] p-2 md:p-4">
+    <section className="overflow-hidden rounded-[10px] border-2 border-black bg-white">
+      <div className="resume-dashboard-surface rounded-[10px] p-2 md:p-4">
         <div className="flex flex-col gap-2 border-b border-slate-200 pb-2 md:pb-3">
           <div className="flex items-center gap-2.5">
             <div className="resume-dashboard-icon flex h-9 w-9 items-center justify-center rounded-[10px]">
@@ -270,7 +270,7 @@ export function CareerDashboard({
         </div>
 
         <div className="mt-2 grid gap-2 md:mt-3 md:gap-3 xl:grid-cols-2" data-export-dashboard-upper>
-          <div className="resume-positioning-card flex h-full w-full flex-col rounded-[14px] border border-slate-200 p-4 text-white">
+          <div className="resume-positioning-card flex h-full w-full flex-col rounded-[10px] border border-slate-200 p-4 text-white">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">Positioning</p>
             <div className="flex flex-1 flex-col">
               <h4 className="mt-2 w-full text-xl font-semibold leading-7 sm:text-2xl">{profile.role}</h4>
@@ -369,7 +369,7 @@ export function CareerDashboard({
             <AccentPanel icon={Target} title="대표 성과 하이라이트">
               <div className="flex h-full flex-col space-y-1.5 md:space-y-2.5">
                 {highlightProjects.map((item) => (
-                  <div key={item.id} className="rounded-[12px] border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2.5">
+                  <div key={item.id} className="rounded-[10px] border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2.5">
                     <p className="text-[13px] font-medium leading-5 text-slate-900">{item.title}</p>
                     <p className="mt-1 text-[12px] leading-4 text-slate-500">
                       {item.organization} · {item.period}
@@ -397,7 +397,7 @@ function DashboardStat({
   tone: "projects" | "categories" | "focus" | "tags";
 }) {
   return (
-    <div className={`resume-stat resume-stat--${tone} min-w-0 rounded-[12px] border border-white/20 p-2 sm:p-3`}>
+    <div className={`resume-stat resume-stat--${tone} min-w-0 rounded-[10px] border border-white/20 p-2 sm:p-3`}>
       <div className="flex items-center gap-1 text-white/80 sm:gap-2">
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         <span className="truncate text-[9px] leading-4 sm:text-[12px]">{label}</span>
@@ -512,7 +512,7 @@ function AccentPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="resume-panel-shadow flex h-full flex-col rounded-[12px] border border-slate-200 bg-white/90 p-2.5 md:p-3">
+    <div className="resume-panel-shadow flex h-full flex-col rounded-[10px] border border-slate-200 bg-white/90 p-2.5 md:p-3">
       <div className="flex items-center gap-2 text-slate-900">
         <Icon className="h-4 w-4 text-slate-600" />
         <p className="text-sm font-semibold">{title}</p>

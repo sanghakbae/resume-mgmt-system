@@ -18,11 +18,11 @@ export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps)
       <div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35 blur-[120px]" />
 
       <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
-        <section className="w-full max-w-[360px] rounded-[28px] border border-white/60 bg-white/18 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-[28px]">
-          <div className="rounded-[22px] border border-white/40 bg-white/22 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] sm:p-5">
+        <section className="w-full max-w-[360px] rounded-[10px] border border-white/60 bg-white/18 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-[28px]">
+          <div className="rounded-[10px] border border-white/40 bg-white/22 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] sm:p-5">
             <div className="h-2.5 w-full rounded-full bg-white/65 shadow-[inset_0_1px_2px_rgba(15,23,42,0.05)]" />
 
-            <div className="mt-4 flex h-11 w-11 items-center justify-center rounded-[16px] bg-[#11142b] text-white shadow-[0_10px_30px_rgba(17,20,43,0.28)]">
+            <div className="mt-4 flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#11142b] text-white shadow-[0_10px_30px_rgba(17,20,43,0.28)]">
               <LockKeyhole className="h-5 w-5" />
             </div>
 
@@ -32,7 +32,7 @@ export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps)
               <p className="mt-2 text-[13px] leading-5 text-slate-600">Google 계정으로 로그인해 이력서, 경력 정보, 수행 업무를 안전하게 관리하세요.</p>
             </div>
 
-            <div className="mt-4 rounded-[18px] border border-white/55 bg-white/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+            <div className="mt-4 rounded-[10px] border border-white/55 bg-white/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-medium text-slate-500">접근 방식</p>
@@ -46,7 +46,7 @@ export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps)
             </div>
 
             {(error || configError) && (
-              <div className="mt-4 flex gap-3 rounded-[18px] border border-rose-200/80 bg-rose-50/80 px-3 py-3 text-[13px] leading-5 text-rose-700">
+              <div className="mt-4 flex gap-3 rounded-[10px] border border-rose-200/80 bg-rose-50/80 px-3 py-3 text-[13px] leading-5 text-rose-700">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{error ?? configError}</p>
               </div>
@@ -64,7 +64,7 @@ export function LoginPage({ clientId, isReady, error, onLogin }: LoginPageProps)
 
       {error || configError ? (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center px-4">
-          <div className="pointer-events-auto w-full max-w-[360px] rounded-[20px] border border-slate-200/80 bg-white px-4 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+          <div className="pointer-events-auto w-full max-w-[360px] rounded-[10px] border border-slate-200/80 bg-white px-4 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
             <p className="text-[13px] font-semibold leading-5 text-slate-900">
               {error ?? configError}
             </p>

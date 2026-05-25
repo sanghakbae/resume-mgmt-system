@@ -656,7 +656,7 @@ export default function App() {
       {linkPopupUrl ? <ProjectLinkPopup url={linkPopupUrl} onClose={() => setLinkPopupUrl(null)} /> : null}
       {showSavedNotice ? (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-4 screen-only">
-          <div className="rounded-[16px] border border-emerald-200 bg-white/95 px-6 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
+          <div className="rounded-[10px] border border-emerald-200 bg-white/95 px-6 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
             <p className="text-base font-semibold text-slate-900">저장되었습니다</p>
           </div>
         </div>
@@ -976,7 +976,7 @@ function ProjectLinkPopup({ url, onClose }: { url: string; onClose: () => void }
       onClick={onClose}
     >
       <div
-        className="flex h-full max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.32)]"
+        className="flex h-full max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.32)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:px-4">
@@ -1023,7 +1023,7 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
           <p className="text-[13px] leading-5 text-slate-500">이 브라우저에서 기록된 방문 이력을 확인합니다.</p>
         </div>
 
-        <div className="overflow-x-auto rounded-[12px] border border-slate-200">
+        <div className="overflow-x-auto rounded-[10px] border border-slate-200">
           <table className="min-w-[640px] w-full border-collapse text-center text-[13px] leading-5">
             <thead className="bg-slate-50">
               <tr className="text-slate-500">
