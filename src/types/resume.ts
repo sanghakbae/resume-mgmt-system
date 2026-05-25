@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 export type ResumeCategory = "모의해킹" | "취약점 진단" | "보안 컨설팅" | "클라우드 보안" | "개발/자동화" | "인증";
 export type ExperienceDocumentType = "portfolio" | "technical";
+export type SkillView = "orbit" | "chips" | "bars" | "list";
 
 export type ExperienceItem = {
   id: number;
@@ -35,6 +36,7 @@ export type Profile = {
   hobbyUrl: string;
   contactEmail: string;
   certifications: string;
+  defaultSkillView?: SkillView;
 };
 
 export type ExperienceFormValues = {
@@ -48,6 +50,7 @@ export type ExperienceFormValues = {
   images: string[];
   featured: boolean;
   documentType: ExperienceDocumentType;
+  highlight: string[];
 };
 
 export type ExperienceValidationErrors = Partial<Record<keyof ExperienceFormValues, string>>;

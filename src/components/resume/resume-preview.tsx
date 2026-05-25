@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Award, BarChart3, BriefcaseBusiness, ShieldCheck, Sparkles, Target, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { categoryMeta, categoryOptions, profileHeaderIcon, profileInfoItems } from "@/data/resume";
@@ -188,7 +188,11 @@ export function CareerDashboard({
   profile: Profile;
   companies: CompanyProfile[];
 }) {
-  const [skillView, setSkillView] = useState<"orbit" | "chips" | "bars" | "list">("orbit");
+  const [skillView, setSkillView] = useState<"orbit" | "chips" | "bars" | "list">(profile.defaultSkillView ?? "orbit");
+
+  useEffect(() => {
+    setSkillView(profile.defaultSkillView ?? "orbit");
+  }, [profile.defaultSkillView]);
   const totalProjects = items.length;
   const activeCategories = categoryOptions.filter((category) => items.some((item) => item.category === category)).length;
   const topCategory = categoryOptions
@@ -489,7 +493,9 @@ function SkillDistributionView({
 }
 
 function getSkillTagLimit(view: "orbit" | "chips" | "bars" | "list") {
-  return view === "orbit" || view === "chips" ? 18 : 8;
+  if (view === "orbit") return 24;
+  if (view === "chips") return 40;
+  return Infinity;
 }
 
 function AccentPanel({

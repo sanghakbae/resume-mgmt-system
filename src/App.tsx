@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Building2, BriefcaseBusiness, Eye, FileText, FolderKanban, LogOut, Pencil, RotateCcw, Settings2, ShieldAlert, ShieldCheck, UserRound } from "lucide-react";
+import { BarChart3, Building2, BriefcaseBusiness, Download, ExternalLink, Eye, FileText, FolderKanban, LogOut, Pencil, RotateCcw, Settings2, ShieldAlert, ShieldCheck, UserRound, X } from "lucide-react";
 import { LoginPage } from "@/components/auth/login-page";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import type {
   ExperienceDocumentType,
   ExperienceItem,
   ExperienceValidationErrors,
+  SkillView,
   VisitLogItem,
 } from "@/types/resume";
 
@@ -33,14 +34,14 @@ const DEFAULT_PRIMARY_WORKSPACE_ID = "public-resume";
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
   {
-    value: "korpub-dotum",
-    label: "KorPub 돋움체",
-    stack: '"KorPub 돋움체", "KorPub Dotum", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif',
-  },
-  {
     value: "pretendard",
     label: "Pretendard",
     stack: '"Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif',
+  },
+  {
+    value: "korpub-dotum",
+    label: "KorPub 돋움체",
+    stack: '"KorPub 돋움체", "KorPub Dotum", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif',
   },
   {
     value: "noto-sans-kr",
@@ -140,6 +141,8 @@ export default function App() {
   const [visitCount, setVisitCount] = useState(0);
   const [visitLogs, setVisitLogs] = useState<VisitLogItem[]>([]);
   const [fontFamily, setFontFamily] = useState<string>(() => getSavedFontFamily());
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [linkPopupUrl, setLinkPopupUrl] = useState<string | null>(null);
   const visitOwnerRef = useRef<string | null>(null);
   const activeOwnerId = isPublicResumeMode ? primaryWorkspaceId : currentWorkspaceId;
   const effectiveIsEditMode = canEdit && isEditMode;
@@ -184,6 +187,28 @@ export default function App() {
     document.documentElement.style.setProperty("--resume-font-family", selectedOption.stack);
     window.localStorage.setItem(FONT_STORAGE_KEY, selectedOption.value);
   }, [fontFamily]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ url?: string }>).detail;
+      if (detail?.url) setLinkPopupUrl(detail.url);
+    };
+    window.addEventListener("resume:openLink", handler);
+    return () => window.removeEventListener("resume:openLink", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!linkPopupUrl) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLinkPopupUrl(null);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [linkPopupUrl]);
 
   useEffect(() => {
     if (isLoading || !activeOwnerId || typeof window === "undefined") {
@@ -336,14 +361,17 @@ export default function App() {
       title: form.title.trim(),
       organization: form.organization.trim(),
       description: form.description,
-      existingTags: [],
+      existingTags: form.highlight,
     });
-    const autoTags = generateSecurityTags({
-      title: form.title.trim(),
-      organization: form.organization.trim(),
-      description: form.description,
-      existingTags: [],
-    });
+    const userHighlight = form.highlight.map((tag) => tag.trim()).filter(Boolean);
+    const mergedHighlight = userHighlight.length
+      ? Array.from(new Set(userHighlight))
+      : generateSecurityTags({
+          title: form.title.trim(),
+          organization: form.organization.trim(),
+          description: form.description,
+          existingTags: [],
+        });
     const nextItem: ExperienceItem = {
       id: editingId ?? Date.now(),
       title: form.title.trim(),
@@ -351,7 +379,7 @@ export default function App() {
       period: form.period.trim(),
       category: inferredCategory,
       description: form.description,
-      highlight: autoTags,
+      highlight: mergedHighlight,
       url: form.url.trim() || undefined,
       image: form.images[0] || form.image || undefined,
       images: form.images.length ? form.images : form.image ? [form.image] : undefined,
@@ -387,6 +415,7 @@ export default function App() {
       images: getExperienceImages(item),
       featured: item.featured ?? false,
       documentType: item.documentType ?? "technical",
+      highlight: item.highlight ?? [],
     });
     setFormErrors({});
     setIsEditMode(true);
@@ -426,6 +455,114 @@ export default function App() {
     resetWorkspace();
     resetCompanyForm();
     resetExperienceForm();
+  };
+
+  const downloadResumePdf = async () => {
+    if (isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    document.documentElement.classList.add("is-exporting");
+
+    const originalSrcs = new Map<HTMLImageElement, string>();
+
+    try {
+      const target = document.querySelector(".print-content") as HTMLElement | null;
+      if (!target) throw new Error("이력서 콘텐츠를 찾을 수 없습니다.");
+
+      if (document.fonts?.ready) await document.fonts.ready;
+
+      const images = Array.from(target.querySelectorAll("img"));
+      const blobToDataUrl = (blob: Blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+      await Promise.all(
+        images.map(async (img) => {
+          if (!img.src || img.src.startsWith("data:")) return;
+          const originalSrc = img.src;
+          const candidates = [
+            originalSrc,
+            `https://images.weserv.nl/?url=${encodeURIComponent(originalSrc.replace(/^https?:\/\//, ""))}`,
+          ];
+          for (const candidate of candidates) {
+            try {
+              const res = await fetch(candidate, { mode: "cors", cache: "force-cache" });
+              if (!res.ok) continue;
+              const blob = await res.blob();
+              const dataUrl = await blobToDataUrl(blob);
+              originalSrcs.set(img, originalSrc);
+              img.src = dataUrl;
+              return;
+            } catch {
+              // try next candidate
+            }
+          }
+        }),
+      );
+
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      const canvas = await html2canvas(target, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        windowWidth: target.scrollWidth,
+        onclone: (clonedDoc) => {
+          clonedDoc.documentElement.classList.add("is-exporting");
+          clonedDoc.querySelectorAll<HTMLElement>(".print-content [class*='min-h-[']").forEach((el) => {
+            el.style.setProperty("min-height", "0", "important");
+            el.style.setProperty("align-items", "flex-start", "important");
+            el.style.setProperty("padding-top", "0.45em", "important");
+            el.style.setProperty("padding-bottom", "0.45em", "important");
+          });
+          clonedDoc.querySelectorAll<HTMLElement>(".print-content .grid").forEach((grid) => {
+            grid.style.setProperty("align-items", "start", "important");
+          });
+          clonedDoc.querySelectorAll<HTMLElement>(".print-content [class*='leading-none']").forEach((el) => {
+            el.style.setProperty("line-height", "1.4", "important");
+          });
+        },
+      });
+
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "p" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const usablePageHeight = pageHeight - margin * 2;
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
+      heightLeft -= usablePageHeight;
+
+      while (heightLeft > 0) {
+        position = margin - (imgHeight - heightLeft);
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
+        heightLeft -= usablePageHeight;
+      }
+
+      const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
+      pdf.save(`${safeName}_이력서.pdf`);
+    } catch (pdfError) {
+      setAssetUploadError(pdfError instanceof Error ? pdfError.message : "PDF 다운로드에 실패했습니다.");
+    } finally {
+      originalSrcs.forEach((src, img) => {
+        img.src = src;
+      });
+      document.documentElement.classList.remove("is-exporting");
+      setIsDownloadingPdf(false);
+    }
   };
 
   const readFileAsDataUrl = (file: File) =>
@@ -499,7 +636,8 @@ export default function App() {
   };
 
   return (
-    <div className="resume-app min-h-[100dvh] overflow-x-hidden bg-slate-100 px-2 py-2 sm:px-4 md:px-6 md:py-6">
+    <div className="resume-app mx-auto min-h-[100dvh] max-w-[1440px] overflow-x-hidden bg-slate-100 px-2 py-2 sm:px-4 md:px-6 md:py-6">
+      {linkPopupUrl ? <ProjectLinkPopup url={linkPopupUrl} onClose={() => setLinkPopupUrl(null)} /> : null}
       {showSavedNotice ? (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-4 screen-only">
           <div className="rounded-[16px] border border-emerald-200 bg-white/95 px-6 py-4 text-center shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
@@ -536,6 +674,16 @@ export default function App() {
                 </>
               ) : (
                 <>
+                  <button
+                    type="button"
+                    onClick={downloadResumePdf}
+                    disabled={isDownloadingPdf}
+                    className={`${mobileHeaderChipClass} ${publicHeaderControlClass} flex items-center justify-center gap-1 border-slate-200 bg-white text-[12px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:px-2.5 md:text-[12px]`}
+                    aria-label="이력서 PDF 다운로드"
+                  >
+                    <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    {isDownloadingPdf ? "생성 중..." : "PDF 다운로드"}
+                  </button>
                   <div className={`${mobileHeaderChipClass} ${publicHeaderControlClass} flex items-center justify-center gap-1 border-slate-200 bg-slate-50 text-[12px] font-medium text-slate-600 md:px-2.5 md:text-[12px]`}>
                     방문 횟수: {visitCount}
                   </div>
@@ -548,7 +696,7 @@ export default function App() {
                     </div>
                   ) : null}
                   {!user && googleClientId ? (
-                    <div className={`${publicHeaderControlClass} shrink`}>
+                    <div className={`${publicHeaderControlClass} hidden shrink md:block`}>
                       <GoogleSignInButton clientId={googleClientId} compact={isMobilePreview} disabled={!isReady} onSuccess={signIn} />
                     </div>
                   ) : null}
@@ -772,12 +920,73 @@ export default function App() {
                     />
                   ) : null}
                   {selectedEditorSection === "visit-log" ? <VisitLogPanel logs={visitLogs} /> : null}
-                  {selectedEditorSection === "settings" ? <SettingsPanel fontFamily={fontFamily} onFontFamilyChange={setFontFamily} /> : null}
+                  {selectedEditorSection === "settings" ? (
+                    <SettingsPanel
+                      fontFamily={fontFamily}
+                      onFontFamilyChange={setFontFamily}
+                      skillView={profile.defaultSkillView ?? "orbit"}
+                      onSkillViewChange={(value) => setProfile((prev) => ({ ...prev, defaultSkillView: value }))}
+                    />
+                  ) : null}
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectLinkPopup({ url, onClose }: { url: string; onClose: () => void }) {
+  let hostname = url;
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    hostname = url;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-full max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.32)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:px-4">
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold leading-5 text-slate-900">{hostname}</p>
+            <p className="truncate text-[11px] leading-4 text-slate-500">{url}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />새 탭
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="닫기"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <iframe
+          src={url}
+          title={`${hostname} 프리뷰`}
+          className="h-full w-full flex-1 border-0 bg-white"
+          referrerPolicy="no-referrer"
+        />
       </div>
     </div>
   );
@@ -1086,13 +1295,24 @@ function getExperiencePeriodScore(period: string) {
 function SettingsPanel({
   fontFamily,
   onFontFamilyChange,
+  skillView,
+  onSkillViewChange,
 }: {
   fontFamily: string;
   onFontFamilyChange: (value: string) => void;
+  skillView: SkillView;
+  onSkillViewChange: (value: SkillView) => void;
 }) {
+  const skillViewOptions: { value: SkillView; label: string; description: string }[] = [
+    { value: "orbit", label: "회전 (Orbit)", description: "태그 24개를 그라데이션 클라우드로 보여줍니다." },
+    { value: "chips", label: "칩 (Chips)", description: "태그 40개를 빈도 강조 칩으로 정렬합니다." },
+    { value: "bars", label: "막대 (Bars)", description: "전체 태그를 사용 빈도 막대 그래프로 표시합니다." },
+    { value: "list", label: "목록 (List)", description: "전체 태그를 순위 목록으로 나열합니다." },
+  ];
+
   return (
     <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm screen-only">
-      <CardContent className="space-y-3 p-3.5 sm:p-4">
+      <CardContent className="space-y-4 p-3.5 sm:p-4">
         <div>
           <h2 className="text-base font-semibold leading-6">설정</h2>
           <p className="text-[13px] leading-5 text-slate-500">폰트와 화면 표시 방식을 조정합니다.</p>
@@ -1112,6 +1332,23 @@ function SettingsPanel({
             ))}
           </select>
           <p className="text-[11px] leading-4 text-slate-500">선택값은 이 브라우저에 저장됩니다. 설치되지 않은 폰트는 다음 대체 폰트로 표시됩니다.</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[13px] font-medium leading-5 text-slate-700">핵심 역량 분포 기본 보기</label>
+          <select
+            className="w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 outline-none"
+            value={skillView}
+            onChange={(event) => onSkillViewChange(event.target.value as SkillView)}
+          >
+            {skillViewOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] leading-4 text-slate-500">{skillViewOptions.find((option) => option.value === skillView)?.description}</p>
+          <p className="text-[11px] leading-4 text-slate-500">방문자에게 처음 노출될 화면을 결정합니다. 저장하면 모든 접속자에게 동일하게 적용됩니다.</p>
         </div>
       </CardContent>
     </Card>

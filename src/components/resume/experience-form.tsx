@@ -1,4 +1,4 @@
-import type { ChangeEvent, Dispatch, SetStateAction } from "react";
+import type { ChangeEvent, Dispatch, FocusEvent as ReactFocusEvent, KeyboardEvent as ReactKeyboardEvent, SetStateAction } from "react";
 import { CalendarDays, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -221,6 +221,14 @@ export function ExperienceForm({
               </div>
             </FormField>
 
+            <FormField label="태그">
+              <TagEditor
+                value={form.highlight}
+                onChange={(next) => updateField("highlight", next)}
+              />
+              <p className="mt-1 text-[11px] leading-4 text-slate-500">엔터 또는 쉼표(,)로 태그 추가. 비워두면 저장 시 설명을 기반으로 자동 생성됩니다.</p>
+            </FormField>
+
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button className="flex w-full flex-1 items-center justify-center bg-slate-900 px-4 py-2 text-white" onClick={onSubmit}>
                 {editingId === null ? <Plus className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
@@ -294,6 +302,55 @@ export function ExperienceForm({
 function getDocumentTypeLabel(documentType: ExperienceItem["documentType"]) {
   if (documentType === "portfolio") return "포트폴리오";
   return "경력기술서";
+}
+
+function TagEditor({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter" && event.key !== ",") return;
+    event.preventDefault();
+    const input = event.currentTarget;
+    const next = input.value.trim();
+    if (!next) return;
+    if (!value.includes(next)) onChange([...value, next]);
+    input.value = "";
+  };
+
+  const handleBlur = (event: ReactFocusEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const next = input.value.trim();
+    if (!next) return;
+    if (!value.includes(next)) onChange([...value, next]);
+    input.value = "";
+  };
+
+  const removeTag = (tag: string) => {
+    onChange(value.filter((entry) => entry !== tag));
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-2 py-1.5">
+      {value.map((tag) => (
+        <span key={tag} className="inline-flex items-center gap-1 rounded-[6px] border border-slate-300 bg-slate-100 px-2 py-0.5 text-[12px] font-medium leading-4 text-slate-700">
+          {tag}
+          <button
+            type="button"
+            aria-label={`${tag} 제거`}
+            className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+            onClick={() => removeTag(tag)}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        className="min-w-[120px] flex-1 border-0 bg-transparent px-1 py-0.5 text-[13px] leading-5 outline-none"
+        placeholder={value.length ? "추가..." : "예: 모의해킹, ISMS"}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+      />
+    </div>
+  );
 }
 
 function getExperiencePeriodScore(period: string) {

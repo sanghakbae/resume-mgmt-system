@@ -109,14 +109,33 @@
   }
 }
 
+.google-sign-in-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  overflow: hidden;
+}
+
+.google-sign-in-button > div,
+.google-sign-in-button > div > div,
+.google-sign-in-button [role="button"] {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box !important;
+}
+
+.google-sign-in-button [role="button"] {
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+}
+
 @media (max-width: 768px) {
   .resume-app [class*="border"][class*="rounded-"]:not([class*="rounded-full"]) {
     border-radius: 6px !important;
-  }
-
-  .google-sign-in-button {
-    height: 28px !important;
-    min-height: 28px !important;
   }
 
   .resume-skill-shield {
@@ -132,6 +151,61 @@
   .resume-skill-shield__item {
     line-height: 1.12;
   }
+}
+
+html.is-exporting {
+  background: #fff !important;
+}
+
+html.is-exporting .screen-only {
+  display: none !important;
+}
+
+html.is-exporting .resume-app {
+  padding: 0 !important;
+  background: #fff !important;
+  max-width: none !important;
+}
+
+html.is-exporting .print-content {
+  width: 100% !important;
+}
+
+html.is-exporting .resume-skill-shield__frame {
+  animation: none !important;
+  transform: none !important;
+}
+
+html.is-exporting .truncate {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html.is-exporting .resume-stat span,
+html.is-exporting .resume-stat p {
+  line-height: 1.5 !important;
+}
+
+html.is-exporting [class*="leading-none"] {
+  line-height: 1.4 !important;
+}
+
+html.is-exporting [class*="leading-3"],
+html.is-exporting [class*="leading-4"] {
+  line-height: 1.45 !important;
+}
+
+html.is-exporting [class*="min-h-5"] {
+  min-height: 22px !important;
+}
+
+html.is-exporting .print-content [class*="min-h-\["] {
+  min-height: 0 !important;
+}
+
+html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
+  align-items: flex-start !important;
 }
 
 @media print {

@@ -42,33 +42,54 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
           <p className="whitespace-pre-wrap text-sm leading-5 text-slate-600 md:leading-6">{item.description}</p>
 
           {item.url ? (
-            <div className="mt-3 space-y-2">
+            <div className="mt-4 border-t border-dashed border-slate-200 pt-3">
+              <p className="mb-2 inline-flex items-center gap-1 rounded-[6px] bg-sky-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+                <ExternalLink className="h-3 w-3" />
+                관련 링크
+              </p>
               {linkPreview ? (
                 <a
                   href={item.url}
                   onClick={(event) => openProjectPopup(event, item.url)}
                   rel="noreferrer"
-                  className="flex items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 py-2"
+                  className="flex items-center gap-2.5 overflow-hidden rounded-[10px] border-l-4 border-l-sky-500 border-y border-r border-slate-200 bg-gradient-to-r from-sky-50 to-white p-2 transition hover:from-sky-100"
                 >
-                  <img
-                    src={linkPreview.favicon}
-                    alt=""
-                    className="h-8 w-8 shrink-0 rounded-[8px] border border-slate-200 bg-white object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12px] font-medium leading-4 text-slate-900">{linkPreview.hostname}</p>
-                    <p className="truncate text-[11px] leading-4 text-slate-500">{item.url}</p>
+                  <div className="aspect-[16/10] h-14 shrink-0 overflow-hidden rounded-[6px] border border-slate-200 bg-slate-100 sm:h-16">
+                    <img
+                      src={`https://s.wordpress.com/mshots/v1/${encodeURIComponent(item.url)}?w=320&h=200`}
+                      alt={`${linkPreview.hostname} 미리보기`}
+                      loading="lazy"
+                      className="h-full w-full object-cover object-top"
+                      onError={(event) => {
+                        const target = event.currentTarget;
+                        target.parentElement?.style.setProperty("display", "none");
+                      }}
+                    />
                   </div>
-                  <ExternalLink className="h-4 w-4 shrink-0 text-slate-500" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <img
+                        src={linkPreview.favicon}
+                        alt=""
+                        className="h-4 w-4 shrink-0 rounded-[3px] border border-slate-200 bg-white object-cover"
+                      />
+                      <p className="truncate text-[12px] font-semibold leading-4 text-slate-900">{linkPreview.hostname}</p>
+                    </div>
+                    <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">{item.url}</p>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-[6px] bg-sky-600 px-2 py-1 text-[11px] font-medium text-white">
+                    팝업 열기
+                    <ExternalLink className="h-3 w-3" />
+                  </span>
                 </a>
               ) : (
                 <a
                   href={item.url}
                   onClick={(event) => openProjectPopup(event, item.url)}
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-700 underline underline-offset-4"
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100"
                 >
-                  프로젝트 링크
+                  프로젝트 링크 팝업 열기
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}
@@ -118,16 +139,7 @@ function getExperienceImages(item: ExperienceItem) {
 
 function openProjectPopup(event: MouseEvent<HTMLAnchorElement>, url: string) {
   event.preventDefault();
-
-  const popup = window.open(
-    url,
-    "resume-project-link",
-    "popup=yes,width=1180,height=820,left=120,top=80,noopener,noreferrer,scrollbars=yes,resizable=yes",
-  );
-
-  if (!popup) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
+  window.dispatchEvent(new CustomEvent("resume:openLink", { detail: { url } }));
 }
 
 function getLinkPreview(url?: string) {

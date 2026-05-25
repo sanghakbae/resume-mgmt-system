@@ -180,6 +180,7 @@ export const defaultProfile: Profile = {
   hobbyUrl: "",
   contactEmail: "totoriverce@naver.com",
   certifications: "CISSP / LPIC Level 1 / 정보처리기사 / 전자계산기기능사 / 전자기기기능사 / Nozomi Networks Certified Engineer",
+  defaultSkillView: "orbit",
 };
 
 export const defaultExperiences: ExperienceItem[] = [
@@ -406,6 +407,7 @@ export const emptyExperienceForm: ExperienceFormValues = {
   images: [],
   featured: false,
   documentType: "technical",
+  highlight: [],
 };
 
 export const emptyCompanyForm: CompanyFormValues = {
