@@ -16,7 +16,7 @@ import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
 import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/supabase";
-import { getPublicVisitCount, incrementPublicVisitCount, shouldCountPublicVisit } from "@/lib/visit-counter";
+import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
   CompanyProfile,
@@ -221,11 +221,16 @@ export default function App() {
     let isCancelled = false;
     const isCountableVisit = shouldCountPublicVisit(isPublicResumeMode, Boolean(user));
     const countKey = getVisitCountKey(activeOwnerId);
-    const logKey = getVisitLogKey(activeOwnerId);
-    const rawLogs = window.localStorage.getItem(logKey);
-    const parsedLogs = safeParseVisitLogs(rawLogs);
 
-    setVisitLogs(parsedLogs);
+    async function refreshRemoteLogs() {
+      try {
+        const remoteLogs = await fetchPublicVisitLogs(activeOwnerId);
+        if (isCancelled) return;
+        setVisitLogs(remoteLogs);
+      } catch (error) {
+        console.warn("방문 로그 동기화에 실패했습니다.", error);
+      }
+    }
 
     async function syncVisitCount() {
       try {
@@ -234,17 +239,34 @@ export default function App() {
 
         if (!isCountableVisit) {
           setVisitCount(currentRemoteCount ?? 0);
+          await refreshRemoteLogs();
           return;
         }
 
         if (visitOwnerRef.current === activeOwnerId) {
           setVisitCount(currentRemoteCount ?? readLocalVisitCount(countKey));
+          await refreshRemoteLogs();
           return;
         }
 
         visitOwnerRef.current = activeOwnerId;
 
-        const nextCount = currentRemoteCount === null ? readLocalVisitCount(countKey) + 1 : await incrementPublicVisitCount(activeOwnerId);
+        let nextCount: number | null = null;
+        try {
+          nextCount = await recordPublicVisitLog({
+            ownerId: activeOwnerId,
+            mode: isPublicResumeMode ? "공개 보기" : "편집 모드",
+            ownerName: profile.name.trim() || "이력서",
+            userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
+            userEmail: user?.email ?? "",
+          });
+        } catch (logError) {
+          console.warn("방문 로그 기록에 실패했습니다.", logError);
+        }
+
+        if (nextCount === null) {
+          nextCount = currentRemoteCount === null ? readLocalVisitCount(countKey) + 1 : await incrementPublicVisitCount(activeOwnerId);
+        }
         if (isCancelled) return;
 
         const safeNextCount = nextCount ?? 0;
@@ -253,15 +275,7 @@ export default function App() {
         }
         setVisitCount(safeNextCount);
 
-        const nextLog = createVisitLogEntry({
-          ownerName: profile.name,
-          isPublicResumeMode,
-          userName: user?.name ?? "게스트",
-          userEmail: user?.email ?? "",
-        });
-        const nextLogs = [nextLog, ...parsedLogs].slice(0, 200);
-        window.localStorage.setItem(logKey, JSON.stringify(nextLogs));
-        setVisitLogs(nextLogs);
+        await refreshRemoteLogs();
       } catch (error) {
         console.warn("방문 횟수 동기화에 실패했습니다.", error);
         if (!isCancelled) {
@@ -1020,7 +1034,7 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
       <CardContent className="space-y-3 p-3.5 sm:p-4">
         <div>
           <h2 className="text-base font-semibold leading-6">방문 로그</h2>
-          <p className="text-[13px] leading-5 text-slate-500">이 브라우저에서 기록된 방문 이력을 확인합니다.</p>
+          <p className="text-[13px] leading-5 text-slate-500">모든 방문자의 공개 보기 접속 이력입니다.</p>
         </div>
 
         <div className="overflow-x-auto rounded-[10px] border border-slate-200">
@@ -1401,41 +1415,6 @@ function formatVisitAt(value: string) {
   }).format(date);
 }
 
-function createVisitLogEntry({
-  ownerName,
-  isPublicResumeMode,
-  userName,
-  userEmail,
-}: {
-  ownerName: string;
-  isPublicResumeMode: boolean;
-  userName: string;
-  userEmail: string;
-}): VisitLogItem {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    visitedAt: new Date().toISOString(),
-    mode: isPublicResumeMode ? "공개 보기" : "편집 모드",
-    ownerName: ownerName.trim() || "이력서",
-    userLabel: userName.trim() || userEmail.trim() || "게스트",
-  };
-}
-
-function safeParseVisitLogs(value: string | null): VisitLogItem[] {
-  if (!value) return [];
-
-  try {
-    const parsed = JSON.parse(value) as VisitLogItem[];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item): item is VisitLogItem => Boolean(item && typeof item.id === "string" && typeof item.visitedAt === "string"))
-      .slice(0, 200);
-  } catch {
-    return [];
-  }
-}
-
 function readLocalVisitCount(key: string) {
   if (typeof window === "undefined") return 0;
 
@@ -1444,13 +1423,8 @@ function readLocalVisitCount(key: string) {
   return Number.isFinite(currentCount) && currentCount > 0 ? currentCount : 0;
 }
 
-
 function getVisitCountKey(ownerId: string) {
   return `resume.visit-count.${ownerId}`;
-}
-
-function getVisitLogKey(ownerId: string) {
-  return `resume.visit-log.${ownerId}`;
 }
 
 function getSavedFontFamily() {

@@ -40,6 +40,58 @@ export async function incrementPublicVisitCount(ownerId: string) {
   return typeof data === "number" ? data : Number(data ?? 0);
 }
 
+type VisitLogRow = {
+  id: string;
+  visited_at: string;
+  mode: string;
+  owner_name: string;
+  user_label: string;
+  user_email: string | null;
+};
+
+export async function recordPublicVisitLog(input: {
+  ownerId: string;
+  mode: string;
+  ownerName: string;
+  userLabel: string;
+  userEmail?: string;
+}) {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  const { data, error } = await supabase.rpc("record_resume_visit", {
+    p_owner_id: input.ownerId,
+    p_mode: input.mode,
+    p_owner_name: input.ownerName,
+    p_user_label: input.userLabel,
+    p_user_email: input.userEmail ?? "",
+  });
+
+  if (error) throw error;
+  return typeof data === "number" ? data : Number(data ?? 0);
+}
+
+export async function fetchPublicVisitLogs(ownerId: string, limit = 200) {
+  if (!isSupabaseConfigured || !supabase) return [];
+
+  const { data, error } = await supabase
+    .from("resume_visit_logs")
+    .select("id, visited_at, mode, owner_name, user_label, user_email")
+    .eq("owner_id", ownerId)
+    .order("visited_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: VisitLogRow) => ({
+    id: row.id,
+    visitedAt: row.visited_at,
+    mode: row.mode,
+    ownerName: row.owner_name,
+    userLabel: row.user_label,
+    userEmail: row.user_email ?? "",
+  }));
+}
+
 function isLocalHost(hostname: string) {
   const normalized = hostname.toLowerCase();
   return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1" || normalized.endsWith(".local");
