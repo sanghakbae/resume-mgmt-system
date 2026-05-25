@@ -106,12 +106,15 @@ function normalizeExperienceCategory(item: ExperienceItem): ExperienceItem {
     featured: item.featured ?? false,
     documentType: normalizeExperienceDocumentType(item),
   };
-  const highlight = generateSecurityTags({
-    title: normalizedItem.title,
-    organization: normalizedItem.organization,
-    description: normalizedItem.description,
-    existingTags: [],
-  });
+  const existingHighlight = Array.isArray(item.highlight) ? item.highlight.map((tag) => String(tag).trim()).filter(Boolean) : [];
+  const highlight = existingHighlight.length
+    ? Array.from(new Set(existingHighlight))
+    : generateSecurityTags({
+        title: normalizedItem.title,
+        organization: normalizedItem.organization,
+        description: normalizedItem.description,
+        existingTags: [],
+      });
 
   return {
     ...normalizedItem,
