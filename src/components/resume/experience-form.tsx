@@ -307,6 +307,7 @@ function getDocumentTypeLabel(documentType: ExperienceItem["documentType"]) {
 function TagEditor({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter" && event.key !== ",") return;
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     const input = event.currentTarget;
     const next = input.value.trim();
