@@ -308,7 +308,7 @@ export default function App() {
     { key: "experience", label: "수행 업무 추가", icon: BriefcaseBusiness },
     { key: "portfolio", label: "포트폴리오", icon: FolderKanban },
     { key: "technical", label: "경력기술서", icon: FileText },
-    { key: "visit-log", label: "방문 로그", icon: Eye },
+    { key: "visit-log", label: "로그", icon: Eye },
     { key: "settings", label: "설정", icon: Settings2 },
   ] as const;
 
@@ -1044,8 +1044,8 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
     <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm screen-only">
       <CardContent className="space-y-3 p-3.5 sm:p-4">
         <div>
-          <h2 className="text-base font-semibold leading-6">방문 로그</h2>
-          <p className="text-[13px] leading-5 text-slate-500">모든 방문자의 공개 보기 접속 및 PDF 다운로드 이력입니다.</p>
+          <h2 className="text-base font-semibold leading-6">로그</h2>
+          <p className="text-[13px] leading-5 text-slate-500">공개 보기 접속과 PDF 다운로드 이력을 모두 표시합니다.</p>
         </div>
 
         <div className="overflow-x-auto rounded-[10px] border border-slate-200">
@@ -1073,7 +1073,7 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
               ) : (
                 <tr>
                   <td className="px-3 py-4 text-slate-500" colSpan={5}>
-                    아직 방문 로그가 없습니다.
+                    아직 로그가 없습니다.
                   </td>
                 </tr>
               )}
