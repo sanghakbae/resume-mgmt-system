@@ -507,13 +507,15 @@ export default function App() {
         import("jspdf"),
       ]);
 
-      const canvas = await html2canvas(target, {
+      const sectionEls = Array.from(target.querySelectorAll<HTMLElement>("[data-pdf-section]"));
+      const captureTargets: HTMLElement[] = sectionEls.length ? sectionEls : [target];
+
+      const captureOptions = {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
-        windowWidth: target.scrollWidth,
-        onclone: (clonedDoc) => {
+        onclone: (clonedDoc: Document) => {
           clonedDoc.documentElement.classList.add("is-exporting");
           clonedDoc.querySelectorAll<HTMLElement>(".print-content [class*='min-h-[']").forEach((el) => {
             el.style.setProperty("min-height", "0", "important");
@@ -527,29 +529,43 @@ export default function App() {
           clonedDoc.querySelectorAll<HTMLElement>(".print-content [class*='leading-none']").forEach((el) => {
             el.style.setProperty("line-height", "1.4", "important");
           });
+          clonedDoc.querySelectorAll<HTMLImageElement>(".print-content img").forEach((img) => {
+            img.style.setProperty("height", "auto", "important");
+            img.style.setProperty("max-height", "none", "important");
+            img.style.setProperty("object-fit", "contain", "important");
+          });
         },
-      });
+      };
 
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "p" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
-      const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const usableWidth = pageWidth - margin * 2;
       const usablePageHeight = pageHeight - margin * 2;
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-      let heightLeft = imgHeight;
-      let position = margin;
+      for (let sectionIndex = 0; sectionIndex < captureTargets.length; sectionIndex++) {
+        const sectionEl = captureTargets[sectionIndex];
+        const sectionCanvas = await html2canvas(sectionEl, {
+          ...captureOptions,
+          windowWidth: sectionEl.scrollWidth,
+        });
+        const imgHeight = (sectionCanvas.height * usableWidth) / sectionCanvas.width;
+        const imgData = sectionCanvas.toDataURL("image/jpeg", 0.95);
 
-      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-      heightLeft -= usablePageHeight;
+        if (sectionIndex > 0) pdf.addPage();
 
-      while (heightLeft > 0) {
-        position = margin - (imgHeight - heightLeft);
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
+        let heightLeft = imgHeight;
+        let position = margin;
+        pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
         heightLeft -= usablePageHeight;
+
+        while (heightLeft > 0) {
+          position = margin - (imgHeight - heightLeft);
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
+          heightLeft -= usablePageHeight;
+        }
       }
 
       const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
@@ -811,48 +827,54 @@ export default function App() {
                   {selectedEditorSection === "dashboard" ? (
                     effectiveIsEditMode ? (
                       <div data-export-dashboard>
-                        <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
+                        <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} isEditable />
                       </div>
                     ) : (
                       <div className="space-y-2 md:space-y-4">
-                        <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
-                          <CardContent className="space-y-2 p-3.5 sm:p-4 md:space-y-4 md:p-5">
-                            <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
-                          </CardContent>
-                        </Card>
-                        <div className="space-y-2 md:space-y-4">
-                          <h2 className="text-2xl font-extrabold leading-7 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
-                            배상학 이력서
-                          </h2>
-                          <ResumePreview
+                        <div data-pdf-section="resume" className="space-y-2 md:space-y-4">
+                          <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
+                            <CardContent className="space-y-2 p-3.5 sm:p-4 md:space-y-4 md:p-5">
+                              <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
+                            </CardContent>
+                          </Card>
+                          <div className="space-y-2 md:space-y-4">
+                            <h2 className="text-2xl font-extrabold leading-7 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+                              배상학 이력서
+                            </h2>
+                            <ResumePreview
+                              isEditMode={effectiveIsEditMode}
+                              profile={derivedProfile}
+                              companies={companies}
+                              experiences={allExperiences}
+                              onEditExperience={startEditingExperience}
+                              onRemoveExperience={removeExperience}
+                            />
+                          </div>
+                        </div>
+                        <div data-pdf-section="portfolio">
+                          <GeneratedExperiencePanel
+                            variant="portfolio"
+                            title="포트폴리오"
+                            description=""
+                            emptyMessage="포트폴리오에 표시할 수행 이력이 없습니다."
+                            items={portfolioExperiences}
                             isEditMode={effectiveIsEditMode}
-                            profile={derivedProfile}
-                            companies={companies}
-                            experiences={allExperiences}
-                            onEditExperience={startEditingExperience}
-                            onRemoveExperience={removeExperience}
+                            onEdit={startEditingExperience}
+                            onRemove={removeExperience}
                           />
                         </div>
-                        <GeneratedExperiencePanel
-                          variant="portfolio"
-                          title="포트폴리오"
-                          description=""
-                          emptyMessage="포트폴리오에 표시할 수행 이력이 없습니다."
-                          items={portfolioExperiences}
-                          isEditMode={effectiveIsEditMode}
-                          onEdit={startEditingExperience}
-                          onRemove={removeExperience}
-                        />
-                        <GeneratedExperiencePanel
-                          variant="technical"
-                          title="경력기술서"
-                          description=""
-                          emptyMessage="경력기술서에 표시할 수행 이력이 없습니다."
-                          items={technicalExperiences}
-                          isEditMode={effectiveIsEditMode}
-                          onEdit={startEditingExperience}
-                          onRemove={removeExperience}
-                        />
+                        <div data-pdf-section="technical">
+                          <GeneratedExperiencePanel
+                            variant="technical"
+                            title="경력기술서"
+                            description=""
+                            emptyMessage="경력기술서에 표시할 수행 이력이 없습니다."
+                            items={technicalExperiences}
+                            isEditMode={effectiveIsEditMode}
+                            onEdit={startEditingExperience}
+                            onRemove={removeExperience}
+                          />
+                        </div>
                       </div>
                     )
                   ) : null}
@@ -1059,7 +1081,7 @@ function GeneratedExperiencePanel({
 }) {
   if (variant === "portfolio") {
     return (
-      <Card className="overflow-hidden rounded-[10px] border border-sky-100 bg-white shadow-sm screen-only">
+      <Card className="overflow-hidden rounded-[10px] border border-sky-100 bg-white shadow-sm">
         <CardContent className="space-y-3 p-0">
           <div className="flex items-center justify-between gap-3 border-b border-sky-900 bg-sky-900 px-3.5 py-3 text-white sm:px-4">
             <h2 className="text-lg font-semibold leading-6">{title}</h2>
@@ -1134,58 +1156,57 @@ function PortfolioArtifactCard({
 
   return (
     <div className="rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,34%)] lg:items-start">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <h3 className="text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
-              <p className="mt-0.5 text-[13px] leading-5 text-slate-500">
-                {item.organization} · {item.period}
-              </p>
-            </div>
-            {isEditMode ? (
-              <Button className="shrink-0 border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700" onClick={() => onEdit(item)}>
-                <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                수정
-              </Button>
-            ) : null}
-          </div>
-
-          <div className="mt-3">
-          <p className="text-sm leading-6 text-slate-700">{summarizePortfolioDescription(item.description)}</p>
-          {item.highlight.length ? (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {item.highlight.slice(0, 6).map((tag) => (
-                <span key={`${item.id}-portfolio-${tag}`} className="rounded-[5px] border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] leading-none text-slate-600">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          </div>
-
-          {isEditMode ? (
-            <div className="mt-3 flex justify-end">
-              <Button className="border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-rose-600" onClick={() => onRemove(item.id)}>
-                삭제
-              </Button>
-            </div>
-          ) : null}
+          <h3 className="text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
+          <p className="mt-0.5 text-[13px] leading-5 text-slate-500">
+            {item.organization} · {item.period}
+          </p>
         </div>
-
-        <div className="grid gap-2">
-          {item.url ? <PortfolioLink url={item.url} /> : null}
-          {images.length ? (
-            <div className="grid gap-2">
-              {images.map((image, index) => (
-                <div key={`${item.id}-portfolio-image-${index}`} className="overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-                  <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[320px] w-full object-contain" />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        {isEditMode ? (
+          <Button className="shrink-0 border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700" onClick={() => onEdit(item)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            수정
+          </Button>
+        ) : null}
       </div>
+
+      <div className="mt-3">
+        <p className="text-sm leading-6 text-slate-700">{summarizePortfolioDescription(item.description)}</p>
+        {item.highlight.length ? (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {item.highlight.slice(0, 6).map((tag) => (
+              <span key={`${item.id}-portfolio-${tag}`} className="rounded-[5px] border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] leading-none text-slate-600">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {item.url ? (
+        <div className="mt-3">
+          <PortfolioLink url={item.url} />
+        </div>
+      ) : null}
+
+      {images.length ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {images.map((image, index) => (
+            <div key={`${item.id}-portfolio-image-${index}`} className="w-full overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
+              <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[374px] w-full object-contain" />
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {isEditMode ? (
+        <div className="mt-3 flex justify-end">
+          <Button className="border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-rose-600" onClick={() => onRemove(item.id)}>
+            삭제
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

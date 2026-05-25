@@ -183,10 +183,12 @@ export function CareerDashboard({
   items,
   profile,
   companies,
+  isEditable = false,
 }: {
   items: ExperienceItem[];
   profile: Profile;
   companies: CompanyProfile[];
+  isEditable?: boolean;
 }) {
   const [skillView, setSkillView] = useState<"orbit" | "chips" | "bars" | "list">(profile.defaultSkillView ?? "orbit");
 
@@ -340,18 +342,20 @@ export function CareerDashboard({
 
           <div className="flex h-full min-h-0 min-w-0 flex-col p-0.5 md:p-1" data-export-tag-distribution>
             <p className="text-center text-sm font-semibold text-slate-900">핵심 역량 분포</p>
-            <div className="mt-1 grid w-full grid-cols-4 gap-1">
-              {skillViewOptions.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  className={`h-7 min-w-0 w-full rounded-[6px] border px-1 text-[11px] font-semibold leading-4 transition ${skillView === option.key ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"}`}
-                  onClick={() => setSkillView(option.key)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {isEditable ? (
+              <div className="mt-1 grid w-full grid-cols-4 gap-1">
+                {skillViewOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={`h-7 min-w-0 w-full rounded-[6px] border px-1 text-[11px] font-semibold leading-4 transition ${skillView === option.key ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"}`}
+                    onClick={() => setSkillView(option.key)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="mt-1 flex min-h-0 w-full flex-1 items-stretch overflow-hidden rounded-[10px] border border-slate-200 bg-white/70 p-2">
               {tagDistribution.length ? (
                 <SkillDistributionView view={skillView} tags={tagDistribution} strongestCount={strongestTagCount} />
