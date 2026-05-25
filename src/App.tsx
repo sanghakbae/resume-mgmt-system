@@ -1224,11 +1224,11 @@ function PortfolioArtifactCard({
   const images = getExperienceImages(item);
 
   return (
-    <div className="rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-w-0 overflow-hidden rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h3 className="text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
-          <p className="mt-0.5 text-[13px] leading-5 text-slate-500">
+          <h3 className="break-keep text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
+          <p className="mt-0.5 break-keep text-[13px] leading-5 text-slate-500">
             {item.organization} · {item.period}
           </p>
         </div>
@@ -1240,8 +1240,8 @@ function PortfolioArtifactCard({
         ) : null}
       </div>
 
-      <div className="mt-3">
-        <p className="text-sm leading-6 text-slate-700">{summarizePortfolioDescription(item.description)}</p>
+      <div className="mt-3 min-w-0">
+        <p className="break-keep break-words text-sm leading-6 text-slate-700">{summarizePortfolioDescription(item.description)}</p>
         {item.highlight.length ? (
           <div className="mt-3 flex flex-wrap gap-1">
             {item.highlight.slice(0, 6).map((tag) => (

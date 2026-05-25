@@ -14,24 +14,24 @@ export function InfoBox({ icon: Icon, label, value, href, className = "" }: Info
   const normalizedHref = normalizeUrl(href);
 
   return (
-    <div className={`flex h-full min-h-[56px] flex-col rounded-[10px] border border-slate-200 bg-slate-50 px-2 py-1.5 md:min-h-[80px] md:px-3 md:py-2.5 ${className}`.trim()}>
+    <div className={`flex h-full min-h-[56px] min-w-0 flex-col rounded-[10px] border border-slate-200 bg-slate-50 px-2 py-1.5 md:min-h-[80px] md:px-3 md:py-2.5 ${className}`.trim()}>
       <div className="mb-1 flex items-center gap-1.5 text-slate-500 md:mb-1.5 md:gap-2">
-        <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
-        <span className="text-[12px] leading-4">{label}</span>
+        <Icon className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4" />
+        <span className="break-keep text-[12px] leading-4">{label}</span>
       </div>
-      <div className="flex flex-1 items-center">
+      <div className="flex min-w-0 flex-1 items-center">
         {normalizedHref ? (
           <a
             href={normalizedHref}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex max-w-full items-center gap-1.5 whitespace-pre-wrap text-[13px] font-medium leading-5 text-slate-900 underline-offset-4 hover:underline"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 whitespace-pre-wrap break-all text-[13px] font-medium leading-5 text-slate-900 underline-offset-4 hover:underline"
           >
-            <span>{displayValue || normalizedHref}</span>
+            <span className="min-w-0 break-all">{displayValue || normalizedHref}</span>
             <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-500" />
           </a>
         ) : (
-          <p className="whitespace-pre-wrap text-[13px] font-medium leading-5 text-slate-900">{displayValue}</p>
+          <p className="min-w-0 whitespace-pre-wrap break-keep break-words text-[13px] font-medium leading-5 text-slate-900">{displayValue}</p>
         )}
       </div>
     </div>

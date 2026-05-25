@@ -16,11 +16,11 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
   const images = getExperienceImages(item);
 
   return (
-    <div className="rounded-[10px] border border-slate-200 p-3.5 sm:p-4" data-export-project-card>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h4 className="text-base font-semibold leading-5 text-slate-900 md:leading-6">{item.title}</h4>
-          <p className="mt-1 text-[13px] leading-4 text-slate-500 md:leading-5">{item.period}</p>
+    <div className="min-w-0 overflow-hidden rounded-[10px] border border-slate-200 p-3.5 sm:p-4" data-export-project-card>
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <h4 className="break-keep text-base font-semibold leading-5 text-slate-900 md:leading-6">{item.title}</h4>
+          <p className="mt-1 break-keep text-[13px] leading-4 text-slate-500 md:leading-5">{item.period}</p>
         </div>
 
         {isEditMode ? (
@@ -37,9 +37,9 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
         ) : null}
       </div>
 
-      <div className="mt-3 grid gap-3">
-        <div>
-          <p className="whitespace-pre-wrap text-sm leading-5 text-slate-600 md:leading-6">{item.description}</p>
+      <div className="mt-3 grid min-w-0 gap-3">
+        <div className="min-w-0">
+          <p className="whitespace-pre-wrap break-keep break-words text-sm leading-5 text-slate-600 md:leading-6">{item.description}</p>
 
           {item.url ? (
             <div className="mt-4 border-t border-dashed border-slate-200 pt-3">

@@ -76,21 +76,21 @@ export function ResumePreview({
           {companyGroups.map(({ company, items }) => (
             <section key={company.organization} className="overflow-hidden rounded-[10px] border border-slate-200 bg-white" data-export-company>
               <div className="border-b border-slate-800 bg-slate-900 px-3.5 py-3 text-white sm:px-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold leading-6 text-white">{company.organization}</h3>
-                    <p className="mt-1 text-[13px] leading-5 text-slate-300">
+                <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="break-keep text-lg font-semibold leading-6 text-white">{company.organization}</h3>
+                    <p className="mt-1 break-keep text-[13px] leading-5 text-slate-300">
                       {[company.department, company.position].filter(Boolean).join(" / ")}
                     </p>
                   </div>
-                  <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[12px] font-medium leading-4 text-slate-100 shadow-sm">
+                  <div className="break-keep rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[12px] font-medium leading-4 text-slate-100 shadow-sm">
                     {company.period}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 border-b border-slate-200 p-3.5 sm:p-4">
-                <p className="text-sm leading-6 text-slate-600">{company.summary}</p>
+              <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-3.5 sm:p-4">
+                <p className="break-keep text-sm leading-6 text-slate-600">{company.summary}</p>
                 <div className="grid gap-1 sm:grid-cols-2 md:grid-cols-3">
                   {company.responsibilities.map((responsibility) => (
                     <div
