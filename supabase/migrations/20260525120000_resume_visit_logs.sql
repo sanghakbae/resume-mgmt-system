@@ -18,6 +18,13 @@ on public.resume_visit_logs
 for select
 using (true);
 
+-- Bootstrap the primary workspace counter to a baseline of 1232 so the
+-- public-facing visit chip starts from this value.
+update public.resume_visit_counters
+set count = greatest(coalesce(count, 0), 1232),
+    updated_at = now()
+where owner_id = 'public-resume';
+
 -- Backfill placeholder log entries so each existing aggregated counter
 -- has the same number of rows in the new log table.
 do $$
