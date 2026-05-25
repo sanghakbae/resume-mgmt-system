@@ -70,6 +70,25 @@ export async function recordPublicVisitLog(input: {
   return typeof data === "number" ? data : Number(data ?? 0);
 }
 
+export async function recordPublicDownloadLog(input: {
+  ownerId: string;
+  ownerName: string;
+  userLabel: string;
+  userEmail?: string;
+}) {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  const { data, error } = await supabase.rpc("record_resume_download", {
+    p_owner_id: input.ownerId,
+    p_owner_name: input.ownerName,
+    p_user_label: input.userLabel,
+    p_user_email: input.userEmail ?? "",
+  });
+
+  if (error) throw error;
+  return typeof data === "string" ? data : null;
+}
+
 export async function fetchPublicVisitLogs(ownerId: string, limit = 200) {
   if (!isSupabaseConfigured || !supabase) return [];
 

@@ -16,7 +16,7 @@ import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
 import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/supabase";
-import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
+import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
   CompanyProfile,
@@ -584,6 +584,17 @@ export default function App() {
 
       const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
       pdf.save(`${safeName}_이력서.pdf`);
+
+      try {
+        await recordPublicDownloadLog({
+          ownerId: activeOwnerId,
+          ownerName: derivedProfile.name?.trim() || "이력서",
+          userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
+          userEmail: user?.email ?? "",
+        });
+      } catch (logError) {
+        console.warn("PDF 다운로드 로그 기록에 실패했습니다.", logError);
+      }
     } catch (pdfError) {
       setAssetUploadError(pdfError instanceof Error ? pdfError.message : "PDF 다운로드에 실패했습니다.");
     } finally {
@@ -1034,7 +1045,7 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
       <CardContent className="space-y-3 p-3.5 sm:p-4">
         <div>
           <h2 className="text-base font-semibold leading-6">방문 로그</h2>
-          <p className="text-[13px] leading-5 text-slate-500">모든 방문자의 공개 보기 접속 이력입니다.</p>
+          <p className="text-[13px] leading-5 text-slate-500">모든 방문자의 공개 보기 접속 및 PDF 다운로드 이력입니다.</p>
         </div>
 
         <div className="overflow-x-auto rounded-[10px] border border-slate-200">
