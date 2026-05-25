@@ -407,10 +407,10 @@ function DashboardStat({
   return (
     <div className={`resume-stat resume-stat--${tone} min-w-0 rounded-[10px] border border-white/20 p-2 sm:p-3`}>
       <div className="flex items-center gap-1 text-white/80 sm:gap-2">
-        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        <span className="truncate text-[9px] leading-4 sm:text-[12px]">{label}</span>
+        <Icon className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
+        <span className="min-w-0 break-keep text-[9px] leading-3 sm:text-[12px] sm:leading-4">{label}</span>
       </div>
-      <p className="mt-1 truncate text-[10px] font-semibold leading-5 text-white sm:text-lg sm:leading-6">{value}</p>
+      <p className="mt-1 break-keep text-[10px] font-semibold leading-4 text-white sm:text-lg sm:leading-6">{value}</p>
     </div>
   );
 }
