@@ -1040,6 +1040,24 @@ function ProjectLinkPopup({ url, onClose }: { url: string; onClose: () => void }
 }
 
 function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
+  const [filter, setFilter] = useState<"all" | "visit" | "download">("all");
+
+  const totalCount = logs.length;
+  const visitCount = logs.filter((log) => log.mode !== "PDF 다운로드").length;
+  const downloadCount = logs.filter((log) => log.mode === "PDF 다운로드").length;
+
+  const filteredLogs = logs.filter((log) => {
+    if (filter === "visit") return log.mode !== "PDF 다운로드";
+    if (filter === "download") return log.mode === "PDF 다운로드";
+    return true;
+  });
+
+  const filters: { key: "all" | "visit" | "download"; label: string; count: number }[] = [
+    { key: "all", label: "전체", count: totalCount },
+    { key: "visit", label: "방문", count: visitCount },
+    { key: "download", label: "다운로드", count: downloadCount },
+  ];
+
   return (
     <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm screen-only">
       <CardContent className="space-y-3 p-3.5 sm:p-4">
@@ -1048,11 +1066,37 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
           <p className="text-[13px] leading-5 text-slate-500">공개 보기 접속과 PDF 다운로드 이력을 모두 표시합니다.</p>
         </div>
 
+        <div className="flex flex-wrap gap-1.5">
+          {filters.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setFilter(option.key)}
+              className={
+                filter === option.key
+                  ? "inline-flex items-center gap-1.5 rounded-[8px] border border-slate-950 bg-slate-950 px-3 py-1 text-[12px] font-medium leading-4 text-white"
+                  : "inline-flex items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3 py-1 text-[12px] font-medium leading-4 text-slate-700 hover:bg-slate-50"
+              }
+            >
+              {option.label}
+              <span
+                className={
+                  filter === option.key
+                    ? "rounded-full bg-white/15 px-1.5 text-[10px] leading-4 text-white"
+                    : "rounded-full bg-slate-100 px-1.5 text-[10px] leading-4 text-slate-500"
+                }
+              >
+                {option.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <div className="overflow-x-auto rounded-[10px] border border-slate-200">
           <table className="min-w-[640px] w-full border-collapse text-center text-[13px] leading-5">
             <thead className="bg-slate-50">
               <tr className="text-slate-500">
-                <th className="border-b border-slate-200 px-3 py-2 font-bold">방문 시각</th>
+                <th className="border-b border-slate-200 px-3 py-2 font-bold">시각</th>
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">모드</th>
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">사용자</th>
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">대상</th>
@@ -1060,8 +1104,8 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
               </tr>
             </thead>
             <tbody>
-              {logs.length ? (
-                logs.map((log) => (
+              {filteredLogs.length ? (
+                filteredLogs.map((log) => (
                   <tr key={log.id} className="align-top">
                     <td className="border-b border-slate-100 px-3 py-2 text-slate-700">{formatVisitAt(log.visitedAt)}</td>
                     <td className="border-b border-slate-100 px-3 py-2 text-slate-700">{log.mode}</td>
