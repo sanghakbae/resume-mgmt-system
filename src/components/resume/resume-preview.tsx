@@ -198,11 +198,19 @@ export function CareerDashboard({
   const totalProjects = items.length;
   const activeCategories = categoryOptions.filter((category) => items.some((item) => item.category === category)).length;
   const topCategory = categoryOptions
-    .map((category) => ({
-      category,
-      count: items.filter((item) => item.category === category).length,
-    }))
-    .sort((left, right) => right.count - left.count)[0];
+    .map((category) => {
+      const categoryItems = items.filter((item) => item.category === category);
+      const mostRecent = categoryItems.reduce(
+        (max, item) => Math.max(max, getPeriodScore(item.period)),
+        0,
+      );
+      return { category, count: categoryItems.length, recency: mostRecent };
+    })
+    .filter((entry) => entry.count > 0)
+    .sort((left, right) => {
+      if (right.count !== left.count) return right.count - left.count;
+      return right.recency - left.recency;
+    })[0];
   const keywordCounts = new Map<string, number>();
 
   for (const item of items) {
