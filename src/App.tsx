@@ -223,6 +223,11 @@ export default function App() {
     const countKey = getVisitCountKey(activeOwnerId);
 
     async function refreshRemoteLogs() {
+      if (!canEdit) {
+        setVisitLogs([]);
+        return;
+      }
+
       try {
         const remoteLogs = await fetchPublicVisitLogs(activeOwnerId);
         if (isCancelled) return;
@@ -289,7 +294,7 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [activeOwnerId, isLoading, isPublicResumeMode, profile.name, user]);
+  }, [activeOwnerId, canEdit, isLoading, isPublicResumeMode, profile.name, user]);
 
   const allExperiences = useMemo(
     () => dedupeExperienceItems(experiences).sort((left, right) => getExperiencePeriodScore(right.period) - getExperiencePeriodScore(left.period)),

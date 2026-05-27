@@ -46,7 +46,6 @@ type VisitLogRow = {
   mode: string;
   owner_name: string;
   user_label: string;
-  user_email: string | null;
 };
 
 export async function recordPublicVisitLog(input: {
@@ -89,12 +88,12 @@ export async function recordPublicDownloadLog(input: {
   return typeof data === "string" ? data : null;
 }
 
-export async function fetchPublicVisitLogs(ownerId: string, limit = 200) {
+export async function fetchPublicVisitLogs(ownerId: string, limit = 50) {
   if (!isSupabaseConfigured || !supabase) return [];
 
   const { data, error } = await supabase
     .from("resume_visit_logs")
-    .select("id, visited_at, mode, owner_name, user_label, user_email")
+    .select("id, visited_at, mode, owner_name, user_label")
     .eq("owner_id", ownerId)
     .order("visited_at", { ascending: false })
     .limit(limit);
@@ -107,7 +106,7 @@ export async function fetchPublicVisitLogs(ownerId: string, limit = 200) {
     mode: row.mode,
     ownerName: row.owner_name,
     userLabel: row.user_label,
-    userEmail: row.user_email ?? "",
+    userEmail: "",
   }));
 }
 
