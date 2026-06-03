@@ -2,3 +2,6 @@ node_modules
 .env
 dist
 .aider*
+service-account.json
+*-firebase-adminsdk-*.json
+.firebase

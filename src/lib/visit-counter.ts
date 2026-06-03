@@ -1,9 +1,21 @@
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  limit as limitQuery,
+  orderBy,
+  query,
+  runTransaction,
+  where,
+} from "firebase/firestore";
+import { db, isFirebaseConfigured } from "@/lib/firebase";
 
-type VisitCounterRow = {
-  owner_id: string;
-  count: number | null;
-};
+const COUNTERS_COLLECTION = "resume_visit_counters";
+const LOGS_COLLECTION = "resume_visit_logs";
 
 export function shouldCountPublicVisit(isPublicResumeMode: boolean, isLoggedIn: boolean) {
   if (!isPublicResumeMode || isLoggedIn || typeof window === "undefined") return false;
@@ -11,42 +23,28 @@ export function shouldCountPublicVisit(isPublicResumeMode: boolean, isLoggedIn: 
 }
 
 export async function getPublicVisitCount(ownerId: string) {
-  if (!isSupabaseConfigured || !supabase) return null;
+  if (!isFirebaseConfigured || !db) return null;
 
-  const { data, error } = await supabase
-    .from("resume_visit_counters")
-    .select("owner_id, count")
-    .eq("owner_id", ownerId)
-    .maybeSingle<VisitCounterRow>();
+  const snapshot = await getDoc(doc(db, COUNTERS_COLLECTION, ownerId));
+  if (!snapshot.exists()) return 0;
 
-  if (error) {
-    throw error;
-  }
-
-  return data?.count ?? 0;
+  const data = snapshot.data() as { count?: number };
+  return data.count ?? 0;
 }
 
 export async function incrementPublicVisitCount(ownerId: string) {
-  if (!isSupabaseConfigured || !supabase) return null;
+  if (!isFirebaseConfigured || !db) return null;
 
-  const { data, error } = await supabase.rpc("increment_resume_visit_count", {
-    p_owner_id: ownerId,
+  const counterRef = doc(db, COUNTERS_COLLECTION, ownerId);
+
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(counterRef);
+    const current = snapshot.exists() ? Number((snapshot.data() as { count?: number }).count ?? 0) : 0;
+    const nextCount = current + 1;
+    transaction.set(counterRef, { count: nextCount, updatedAt: Timestamp.now() }, { merge: true });
+    return nextCount;
   });
-
-  if (error) {
-    throw error;
-  }
-
-  return typeof data === "number" ? data : Number(data ?? 0);
 }
-
-type VisitLogRow = {
-  id: string;
-  visited_at: string;
-  mode: string;
-  owner_name: string;
-  user_label: string;
-};
 
 export async function recordPublicVisitLog(input: {
   ownerId: string;
@@ -55,18 +53,28 @@ export async function recordPublicVisitLog(input: {
   userLabel: string;
   userEmail?: string;
 }) {
-  if (!isSupabaseConfigured || !supabase) return null;
+  if (!isFirebaseConfigured || !db) return null;
 
-  const { data, error } = await supabase.rpc("record_resume_visit", {
-    p_owner_id: input.ownerId,
-    p_mode: input.mode,
-    p_owner_name: input.ownerName,
-    p_user_label: input.userLabel,
-    p_user_email: input.userEmail ?? "",
+  const dbRef = db;
+  const counterRef = doc(dbRef, COUNTERS_COLLECTION, input.ownerId);
+
+  // Add the log entry first, then atomically bump the aggregate counter.
+  await addDoc(collection(dbRef, LOGS_COLLECTION), {
+    ownerId: input.ownerId,
+    mode: input.mode,
+    ownerName: input.ownerName,
+    userLabel: input.userLabel,
+    userEmail: input.userEmail?.trim() || null,
+    visitedAt: Timestamp.now(),
   });
 
-  if (error) throw error;
-  return typeof data === "number" ? data : Number(data ?? 0);
+  return runTransaction(dbRef, async (transaction) => {
+    const snapshot = await transaction.get(counterRef);
+    const current = snapshot.exists() ? Number((snapshot.data() as { count?: number }).count ?? 0) : 0;
+    const nextCount = current + 1;
+    transaction.set(counterRef, { count: nextCount, updatedAt: Timestamp.now() }, { merge: true });
+    return nextCount;
+  });
 }
 
 export async function recordPublicDownloadLog(input: {
@@ -75,39 +83,51 @@ export async function recordPublicDownloadLog(input: {
   userLabel: string;
   userEmail?: string;
 }) {
-  if (!isSupabaseConfigured || !supabase) return null;
+  if (!isFirebaseConfigured || !db) return null;
 
-  const { data, error } = await supabase.rpc("record_resume_download", {
-    p_owner_id: input.ownerId,
-    p_owner_name: input.ownerName,
-    p_user_label: input.userLabel,
-    p_user_email: input.userEmail ?? "",
+  const docRef = await addDoc(collection(db, LOGS_COLLECTION), {
+    ownerId: input.ownerId,
+    mode: "PDF 다운로드",
+    ownerName: input.ownerName,
+    userLabel: input.userLabel,
+    userEmail: input.userEmail?.trim() || null,
+    visitedAt: Timestamp.now(),
   });
 
-  if (error) throw error;
-  return typeof data === "string" ? data : null;
+  return docRef.id;
 }
 
+type VisitLogDoc = {
+  ownerId: string;
+  visitedAt?: Timestamp;
+  mode: string;
+  ownerName: string;
+  userLabel: string;
+};
+
 export async function fetchPublicVisitLogs(ownerId: string, limit = 50) {
-  if (!isSupabaseConfigured || !supabase) return [];
+  if (!isFirebaseConfigured || !db) return [];
 
-  const { data, error } = await supabase
-    .from("resume_visit_logs")
-    .select("id, visited_at, mode, owner_name, user_label")
-    .eq("owner_id", ownerId)
-    .order("visited_at", { ascending: false })
-    .limit(limit);
+  const logsQuery = query(
+    collection(db, LOGS_COLLECTION),
+    where("ownerId", "==", ownerId),
+    orderBy("visitedAt", "desc"),
+    limitQuery(limit),
+  );
 
-  if (error) throw error;
+  const snapshot = await getDocs(logsQuery);
 
-  return (data ?? []).map((row: VisitLogRow) => ({
-    id: row.id,
-    visitedAt: row.visited_at,
-    mode: row.mode,
-    ownerName: row.owner_name,
-    userLabel: row.user_label,
-    userEmail: "",
-  }));
+  return snapshot.docs.map((entry) => {
+    const data = entry.data() as VisitLogDoc;
+    return {
+      id: entry.id,
+      visitedAt: data.visitedAt ? data.visitedAt.toDate().toISOString() : new Date().toISOString(),
+      mode: data.mode,
+      ownerName: data.ownerName,
+      userLabel: data.userLabel,
+      userEmail: "",
+    };
+  });
 }
 
 function isLocalHost(hostname: string) {

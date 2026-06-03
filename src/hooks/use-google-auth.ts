@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut as firebaseSignOut } from "firebase/auth";
 import { normalizeGoogleUser, parseGoogleCredential } from "@/lib/google-auth";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import type { GoogleCredentialResponse, GoogleWindow } from "@/types/google";
 import type { GoogleUser } from "@/types/resume";
 
@@ -97,60 +98,29 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
   }, [enabled]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isFirebaseConfigured || !auth) {
       return;
     }
 
-    let active = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-
-      const sessionUser = data.session?.user;
+    const unsubscribe = onAuthStateChanged(auth, (sessionUser) => {
       if (!sessionUser?.email) {
-        if (isSupabaseConfigured) {
-          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-          setUser(null);
-        }
+        window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        setUser(null);
         return;
       }
 
       const nextUser = normalizeGoogleUser({
-        sub: sessionUser.id,
+        sub: sessionUser.uid,
         email: sessionUser.email,
-        name: sessionUser.user_metadata?.full_name ?? sessionUser.user_metadata?.name ?? sessionUser.email,
-        picture: sessionUser.user_metadata?.avatar_url,
-      });
-      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-      setUser(nextUser);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const sessionUser = session?.user;
-
-      if (!sessionUser?.email) {
-        if (isSupabaseConfigured) {
-          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-          setUser(null);
-        }
-        return;
-      }
-
-      const nextUser = normalizeGoogleUser({
-        sub: sessionUser.id,
-        email: sessionUser.email,
-        name: sessionUser.user_metadata?.full_name ?? sessionUser.user_metadata?.name ?? sessionUser.email,
-        picture: sessionUser.user_metadata?.avatar_url,
+        name: sessionUser.displayName ?? sessionUser.email,
+        picture: sessionUser.photoURL ?? undefined,
       });
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
     });
 
     return () => {
-      active = false;
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
@@ -161,23 +131,21 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
 
       if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
         setError(deniedMessage);
-        if (isSupabaseConfigured && supabase) {
-          await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+        if (isFirebaseConfigured && auth) {
+          await firebaseSignOut(auth).catch(() => undefined);
         }
         window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
         setUser(null);
         return;
       }
 
-      if (isSupabaseConfigured && supabase) {
-        const { error: signInError } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: response.credential,
-          ...(nonce ? { nonce } : {}),
-        });
-
-        if (signInError) {
-          setError(`Supabase 인증에 실패했습니다: ${signInError.message}`);
+      if (isFirebaseConfigured && auth) {
+        try {
+          const credential = GoogleAuthProvider.credential(response.credential);
+          await signInWithCredential(auth, credential);
+        } catch (signInError) {
+          const message = signInError instanceof Error ? signInError.message : String(signInError);
+          setError(`Firebase 인증에 실패했습니다: ${message}`);
           window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
           setUser(null);
           return;
@@ -196,8 +164,8 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
     setUser(null);
 
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut({ scope: "local" });
+    if (isFirebaseConfigured && auth) {
+      await firebaseSignOut(auth);
     }
 
     const googleWindow = window as GoogleWindow;

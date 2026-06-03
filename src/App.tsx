@@ -15,7 +15,7 @@ import { useResumeWorkspace } from "@/hooks/use-resume-workspace";
 import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
-import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/supabase";
+import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/firebase";
 import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,

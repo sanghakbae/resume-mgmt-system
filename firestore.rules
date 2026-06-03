@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The single editor account allowed to write resume workspaces.
+    function isEditor() {
+      return request.auth != null
+        && request.auth.token.email == "totoriverce@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+
+    // Resume workspace documents: public read, editor-only write.
+    match /resume_workspaces/{ownerId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Visit counters: public read. Public visitors increment the aggregate,
+    // so writes are open but constrained to a +1 step (or initial value of 1).
+    match /resume_visit_counters/{ownerId} {
+      allow read: if true;
+      allow create: if request.resource.data.count == 1;
+      allow update: if request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
+
+    // Visit logs: public read, append-only create with a fixed shape. No edits.
+    match /resume_visit_logs/{logId} {
+      allow read: if true;
+      allow create: if request.resource.data.ownerId is string
+        && request.resource.data.mode is string
+        && request.resource.data.ownerName is string
+        && request.resource.data.userLabel is string
+        && request.resource.data.visitedAt is timestamp;
+      allow update, delete: if false;
+    }
+  }
+}

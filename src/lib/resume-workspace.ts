@@ -1,6 +1,9 @@
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { CompanyProfile, ExperienceItem, Profile, ResumeWorkspace, WorkspaceSummary } from "@/types/resume";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
+
+const WORKSPACES_COLLECTION = "resume_workspaces";
 
 const WORKSPACE_KEY_PREFIX = "resume.workspace.";
 
@@ -209,7 +212,7 @@ function mergeWorkspaceWithDefaults(
 }
 
 export function getStorageMode() {
-  if (isSupabaseConfigured) return "supabase";
+  if (isFirebaseConfigured) return "firebase";
   if (getApiBaseUrl()) return "api";
   return canUseLocalWorkspaceStorage() ? "local" : "database required";
 }
@@ -223,26 +226,27 @@ export async function loadWorkspace(
 ) {
   const candidateOwnerIds = [ownerId, ...fallbackOwnerIds.map((value) => value.trim()).filter(Boolean).filter((value, index, array) => array.indexOf(value) === index)];
 
-  if (isSupabaseConfigured && supabase) {
+  if (isFirebaseConfigured && db) {
     for (const candidateOwnerId of candidateOwnerIds) {
-      const { data, error } = await supabase
-        .from("resume_workspaces")
-        .select("owner_id, editor_email, profile, companies, experiences, updated_at")
-        .eq("owner_id", candidateOwnerId)
-        .maybeSingle();
+      const snapshot = await getDoc(doc(db, WORKSPACES_COLLECTION, candidateOwnerId));
 
-      if (error) {
-        throw error;
-      }
+      if (snapshot.exists()) {
+        const data = snapshot.data() as {
+          ownerId?: string;
+          editorEmail?: string | null;
+          profile?: Profile;
+          companies?: CompanyProfile[];
+          experiences?: ExperienceItem[];
+          updatedAt?: string;
+        };
 
-      if (data) {
         return mergeWorkspaceWithDefaults({
-          ownerId: data.owner_id,
-          editorEmail: data.editor_email ?? null,
-          profile: (data.profile as Profile) ?? defaultProfile,
-          companies: (data.companies as CompanyProfile[]) ?? defaultCompanies,
-          experiences: (data.experiences as ExperienceItem[]) ?? defaultExperiences,
-          updatedAt: data.updated_at ?? new Date().toISOString(),
+          ownerId: data.ownerId ?? candidateOwnerId,
+          editorEmail: data.editorEmail ?? null,
+          profile: data.profile ?? defaultProfile,
+          companies: data.companies ?? defaultCompanies,
+          experiences: data.experiences ?? defaultExperiences,
+          updatedAt: data.updatedAt ?? new Date().toISOString(),
         }, defaultProfile, defaultCompanies, defaultExperiences);
       }
     }
@@ -295,31 +299,25 @@ export async function saveWorkspace(workspace: ResumeWorkspace) {
     experiences: dedupeExperienceItems(workspace.experiences).map(normalizeExperienceCategory),
   };
 
-  if (isSupabaseConfigured && supabase) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const editorEmail = user?.email?.trim().toLowerCase() ?? null;
+  if (isFirebaseConfigured && db) {
+    const editorEmail = auth?.currentUser?.email?.trim().toLowerCase() ?? null;
 
     if (!editorEmail) {
-      throw new Error("Supabase 로그인 세션이 없어 저장할 수 없습니다.");
+      throw new Error("Firebase 로그인 세션이 없어 저장할 수 없습니다.");
     }
 
-    const { error } = await supabase.from("resume_workspaces").upsert(
+    await setDoc(
+      doc(db, WORKSPACES_COLLECTION, workspace.ownerId),
       {
-        owner_id: workspace.ownerId,
-        editor_email: editorEmail,
+        ownerId: workspace.ownerId,
+        editorEmail,
         profile: normalizedWorkspace.profile,
         companies: normalizedWorkspace.companies,
         experiences: normalizedWorkspace.experiences,
-        updated_at: normalizedWorkspace.updatedAt,
+        updatedAt: normalizedWorkspace.updatedAt,
       },
-      { onConflict: "owner_id" },
+      { merge: true },
     );
-
-    if (error) {
-      throw error;
-    }
 
     return;
   }

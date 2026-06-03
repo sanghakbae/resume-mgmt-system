@@ -3,9 +3,10 @@ main = "worker/r2-assets-worker.js"
 compatibility_date = "2026-05-11"
 account_id = "02f0426678a5977483be4b2210cdf293"
 
+# FIREBASE_API_KEY is the public Firebase Web API key (same as VITE_FIREBASE_API_KEY).
+# Used to verify uploaders' Firebase ID tokens via the Identity Toolkit lookup endpoint.
 [vars]
-SUPABASE_URL = "https://gfybyxbrmkwbzuyhyqiv.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmeWJ5eGJybWt3Ynp1eWh5cWl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Njk2MzAsImV4cCI6MjA4ODQ0NTYzMH0.Cr9rw9lCOLQ1e7wdJ-OvZRJ4VgDjKPvvoPd2cMbyiio"
+FIREBASE_API_KEY = "AIzaSyCex1fwFO-Krpl_fmfxCCvtGJ1yTKCuY-A"
 EDITOR_EMAILS = "totoriverce@gmail.com"
 
 [[r2_buckets]]

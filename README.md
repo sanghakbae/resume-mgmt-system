@@ -30,7 +30,7 @@
 - 편집 허용 계정은 `VITE_EDITOR_EMAILS`로 제어
 - 기본 예시는 `totoriverce@gmail.com`
 - 비허용 계정은 공개 화면만 볼 수 있고, 편집 버튼과 저장 기능은 비활성화
-- Supabase를 켠 경우에도 저장 정책은 로그인한 이메일과 `editor_email` 일치 여부로 다시 검증
+- Firebase를 켠 경우에도 저장 정책은 로그인한 이메일과 Firestore 보안 규칙(편집자 이메일)으로 다시 검증
 
 ### 개인 사용 방법
 
@@ -140,12 +140,14 @@ npm run build
 
 ```env
 VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
-VITE_ENABLE_SUPABASE=false
+VITE_ENABLE_FIREBASE=true
 VITE_PUBLIC_RESUME_MODE=true
 VITE_ADMIN_EMAILS=admin@example.com
 VITE_EDITOR_EMAILS=totoriverce@gmail.com
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_FIREBASE_API_KEY=your-firebase-web-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_APP_ID=your-firebase-app-id
 VITE_ASSET_API_BASE_URL=https://your-r2-worker.example.workers.dev
 ```
 
@@ -153,8 +155,8 @@ VITE_ASSET_API_BASE_URL=https://your-r2-worker.example.workers.dev
 
 - `VITE_GOOGLE_CLIENT_ID`
   - Google 로그인 버튼과 One Tap 인증에 사용
-- `VITE_ENABLE_SUPABASE`
-  - `true`일 때 Supabase 세션과 저장소 사용
+- `VITE_ENABLE_FIREBASE`
+  - `true`일 때 Firebase 인증(Google 로그인)과 Firestore 저장소 사용
   - `false`일 때는 브라우저 로컬 작업공간 사용
 - `VITE_PUBLIC_RESUME_MODE`
   - `true`면 공개 보기 중심 모드
@@ -166,14 +168,13 @@ VITE_ASSET_API_BASE_URL=https://your-r2-worker.example.workers.dev
   - 공개 모드에서 편집을 허용할 이메일 목록
   - 개인 사용 시 본인 Google 이메일을 여기에 넣어야 편집 가능
   - 편집과 저장 권한의 기준
-  - Supabase를 쓸 때도 로그인한 이메일과 일치해야 저장 가능
-- `VITE_SUPABASE_URL`
-  - Supabase를 사용할 때 프로젝트 URL
-- `VITE_SUPABASE_ANON_KEY`
-  - Supabase를 사용할 때 anon key
+  - Firebase를 쓸 때도 로그인한 이메일이 Firestore 규칙의 편집자와 일치해야 저장 가능
+- `VITE_FIREBASE_API_KEY` / `VITE_FIREBASE_AUTH_DOMAIN` / `VITE_FIREBASE_PROJECT_ID` / `VITE_FIREBASE_APP_ID`
+  - Firebase 콘솔의 웹 앱 SDK 설정에서 복사한 값
+  - Firebase 인증과 Firestore 연결에 사용
 - `VITE_ASSET_API_BASE_URL`
   - 첨부 파일을 Cloudflare R2에 저장할 때 사용하는 Worker API 주소
-  - 설정되면 프로필 사진과 수행 업무 이미지는 Supabase Storage 대신 R2 Worker로 업로드됨
+  - 프로필 사진과 수행 업무 이미지는 R2 Worker로 업로드됨 (스토리지는 계속 R2 사용)
   - R2 Access Key/Secret은 프론트엔드에 넣지 않고 Worker/R2 바인딩에서만 관리
 
 ## Cloudflare R2 첨부 파일 저장
@@ -221,7 +222,7 @@ VITE_ASSET_API_BASE_URL=https://your-r2-worker.example.workers.dev
 - `src/hooks`
   - Google Auth, 작업공간 저장 로직
 - `src/lib`
-  - 사진 보정, 요약 생성, 태그 추출, Supabase 연동
+  - 사진 보정, 요약 생성, 태그 추출, Firebase 연동
 - `src/data/resume.ts`
   - 기본 이력서 데이터와 카드 메타정보
 - `src/types/resume.ts`

@@ -106,7 +106,7 @@ function corsHeaders(request) {
 }
 
 async function validateUploadAccess(request, env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.EDITOR_EMAILS) {
+  if (!env.FIREBASE_API_KEY || !env.EDITOR_EMAILS) {
     return "Upload authentication is not configured.";
   }
 
@@ -115,25 +115,31 @@ async function validateUploadAccess(request, env) {
     return "Login session is required.";
   }
 
-  const response = await fetch(`${env.SUPABASE_URL.replace(/\/+$/, "")}/auth/v1/user`, {
-    headers: {
-      apikey: env.SUPABASE_ANON_KEY,
-      authorization,
+  const idToken = authorization.slice("bearer ".length).trim();
+
+  // Verify the Firebase ID token via the Identity Toolkit lookup endpoint.
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(env.FIREBASE_API_KEY)}`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idToken }),
     },
-  });
+  );
 
   if (!response.ok) {
     return "Invalid login session.";
   }
 
-  const user = await response.json();
-  const email = String(user.email || "").toLowerCase();
+  const payload = await response.json();
+  const user = Array.isArray(payload.users) ? payload.users[0] : null;
+  const email = String(user?.email || "").toLowerCase();
   const allowedEmails = String(env.EDITOR_EMAILS)
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
 
-  if (!allowedEmails.includes(email)) {
+  if (!email || !allowedEmails.includes(email)) {
     return "This account is not allowed to upload assets.";
   }
 
