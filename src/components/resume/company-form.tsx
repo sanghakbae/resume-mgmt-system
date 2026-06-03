@@ -3,6 +3,7 @@ import { Building2, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { CompanyFormValues, CompanyProfile, CompanyValidationErrors } from "@/types/resume";
 import { FormField } from "./form-field";
 
@@ -62,18 +63,17 @@ export function CompanyForm({
               <Input value={form.period} onChange={(e) => updateField("period", e.target.value)} placeholder="예: 2023.06 - 현재" />
             </FormField>
             <FormField label="회사 요약" error={errors.summary}>
-              <textarea
-                className="min-h-[84px] w-full rounded-[10px] border border-slate-200 px-2.5 py-1.5 text-sm leading-5 outline-none"
+              <RichTextEditor
+                ariaLabel="회사 요약"
                 value={form.summary}
-                onChange={(e) => updateField("summary", e.target.value)}
+                onChange={(html) => updateField("summary", html)}
               />
             </FormField>
-            <FormField label="핵심 업무" error={errors.responsibilities}>
-              <textarea
-                className="min-h-[84px] w-full rounded-[10px] border border-slate-200 px-2.5 py-1.5 text-sm leading-5 outline-none"
-                value={form.responsibilities}
-                onChange={(e) => updateField("responsibilities", e.target.value)}
-                placeholder="줄바꿈으로 구분해 입력"
+            <FormField label="핵심 업무" error={errors.responsibilitiesHtml}>
+              <RichTextEditor
+                ariaLabel="핵심 업무"
+                value={form.responsibilitiesHtml}
+                onChange={(html) => updateField("responsibilitiesHtml", html)}
               />
             </FormField>
 

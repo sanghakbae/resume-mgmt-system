@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { categoryMeta, categoryOptions, profileHeaderIcon, profileInfoItems } from "@/data/resume";
 import type { CompanyProfile, ExperienceItem, Profile } from "@/types/resume";
 import { getPhotoTransformStyle } from "@/lib/photo-style";
+import { isEmptyRichText, renderRichText } from "@/lib/rich-text";
 import { ExperienceCard } from "./experience-card";
 import { InfoBox } from "./info-box";
 
@@ -90,17 +91,27 @@ export function ResumePreview({
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-3.5 sm:p-4">
-                <p className="break-keep text-sm leading-6 text-slate-600">{company.summary}</p>
-                <div className="grid gap-1 sm:grid-cols-2 md:grid-cols-3">
-                  {company.responsibilities.map((responsibility) => (
-                    <div
-                      key={responsibility}
-                      className="flex min-h-[28px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-center text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
-                    >
-                      {responsibility}
-                    </div>
-                  ))}
-                </div>
+                <div
+                  className="resume-rich break-keep text-sm leading-6 text-slate-600"
+                  dangerouslySetInnerHTML={{ __html: renderRichText(company.summary) }}
+                />
+                {!isEmptyRichText(company.responsibilitiesHtml) ? (
+                  <div
+                    className="resume-rich break-keep text-sm leading-6 text-slate-600"
+                    dangerouslySetInnerHTML={{ __html: renderRichText(company.responsibilitiesHtml) }}
+                  />
+                ) : (
+                  <div className="grid gap-1 sm:grid-cols-2 md:grid-cols-3">
+                    {company.responsibilities.map((responsibility) => (
+                      <div
+                        key={responsibility}
+                        className="flex min-h-[28px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-center text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
+                      >
+                        {responsibility}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="p-3.5 sm:p-4">

@@ -3,6 +3,7 @@ import { CalendarDays, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { ExperienceFormValues, ExperienceItem, ExperienceValidationErrors } from "@/types/resume";
 import { FormField } from "./form-field";
 
@@ -144,10 +145,10 @@ export function ExperienceForm({
               </div>
             </FormField>
             <FormField label="수행 업무 설명" error={errors.description}>
-              <textarea
-                className="min-h-[96px] w-full rounded-[10px] border border-slate-200 px-2.5 py-1.5 text-sm leading-5 outline-none"
+              <RichTextEditor
+                ariaLabel="수행 업무 설명"
                 value={form.description}
-                onChange={(e) => updateField("description", e.target.value)}
+                onChange={(html) => updateField("description", html)}
               />
             </FormField>
             <FormField label="프로젝트 URL">

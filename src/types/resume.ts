@@ -98,6 +98,8 @@ export type CompanyProfile = {
   period?: string;
   summary: string;
   responsibilities: string[];
+  /** Rich-text (HTML) version of 핵심 업무; when set it takes precedence over `responsibilities`. */
+  responsibilitiesHtml?: string;
 };
 
 export type CompanyFormValues = {
@@ -106,7 +108,7 @@ export type CompanyFormValues = {
   position: string;
   period: string;
   summary: string;
-  responsibilities: string;
+  responsibilitiesHtml: string;
 };
 
 export type CompanyValidationErrors = Partial<Record<keyof CompanyFormValues, string>>;

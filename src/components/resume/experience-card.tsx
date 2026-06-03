@@ -2,6 +2,7 @@ import type { MouseEvent } from "react";
 import { categoryMeta } from "@/data/resume";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { renderRichText } from "@/lib/rich-text";
 import type { ExperienceItem } from "@/types/resume";
 
 type ExperienceCardProps = {
@@ -39,7 +40,10 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
 
       <div className="mt-3 grid min-w-0 gap-3">
         <div className="min-w-0">
-          <p className="whitespace-pre-wrap break-keep break-words text-sm leading-5 text-slate-600 md:leading-6">{item.description}</p>
+          <div
+            className="resume-rich break-keep break-words text-sm leading-5 text-slate-600 md:leading-6"
+            dangerouslySetInnerHTML={{ __html: renderRichText(item.description) }}
+          />
 
           {item.url ? (
             <div className="mt-4 border-t border-dashed border-slate-200 pt-3">

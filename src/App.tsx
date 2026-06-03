@@ -15,6 +15,7 @@ import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
 import { isAssetUploadConfigured, isFirebaseConfigured, uploadResumeAsset } from "@/lib/firebase";
+import { isEmptyRichText, listToHtml } from "@/lib/rich-text";
 import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
@@ -64,7 +65,7 @@ function validateExperience(form: ExperienceFormValues): ExperienceValidationErr
   if (!form.title.trim()) errors.title = "업무명 또는 프로젝트명을 입력하세요.";
   if (!form.organization.trim()) errors.organization = "고객사 또는 조직명을 입력하세요.";
   if (!form.period.trim()) errors.period = "기간을 입력하세요.";
-  if (!form.description.trim()) errors.description = "업무 설명을 입력하세요.";
+  if (isEmptyRichText(form.description)) errors.description = "업무 설명을 입력하세요.";
 
   return errors;
 }
@@ -74,8 +75,8 @@ function validateCompany(form: CompanyFormValues): CompanyValidationErrors {
 
   if (!form.organization.trim()) errors.organization = "회사명을 입력하세요.";
   if (!form.period.trim()) errors.period = "재직 기간을 입력하세요.";
-  if (!form.summary.trim()) errors.summary = "회사 요약을 입력하세요.";
-  if (!form.responsibilities.trim()) errors.responsibilities = "핵심 업무를 입력하세요.";
+  if (isEmptyRichText(form.summary)) errors.summary = "회사 요약을 입력하세요.";
+  if (isEmptyRichText(form.responsibilitiesHtml)) errors.responsibilitiesHtml = "핵심 업무를 입력하세요.";
 
   return errors;
 }
@@ -342,10 +343,8 @@ export default function App() {
       position: companyForm.position.trim() || undefined,
       period: companyForm.period.trim(),
       summary: companyForm.summary.trim(),
-      responsibilities: companyForm.responsibilities
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean),
+      responsibilities: [],
+      responsibilitiesHtml: companyForm.responsibilitiesHtml.trim(),
     };
 
     setCompanies((prev) => {
@@ -455,7 +454,7 @@ export default function App() {
       position: company.position ?? "",
       period: company.period ?? "",
       summary: company.summary,
-      responsibilities: company.responsibilities.join("\n"),
+      responsibilitiesHtml: company.responsibilitiesHtml ?? listToHtml(company.responsibilities),
     });
     setCompanyErrors({});
     setIsEditMode(true);
@@ -1327,7 +1326,17 @@ function PortfolioLink({ url }: { url: string }) {
 }
 
 function summarizePortfolioDescription(description: string) {
-  const firstParagraph = description
+  // description may be rich HTML; reduce to plain text for the short card preview.
+  const plain = description
+    .replace(/<\/(p|div|li|h[1-3]|tr)>/gi, "\n")
+    .replace(/<br\s*\/?>(?=)/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+
+  const firstParagraph = plain
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean)[0];

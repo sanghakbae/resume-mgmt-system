@@ -416,5 +416,5 @@ export const emptyCompanyForm: CompanyFormValues = {
   position: "",
   period: "",
   summary: "",
-  responsibilities: "",
+  responsibilitiesHtml: "",
 };
