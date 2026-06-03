@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadWorkspace, saveWorkspace, getStorageMode, listLocalWorkspaceSummaries } from "@/lib/resume-workspace";
 import type { CompanyProfile, ExperienceItem, Profile, ResumeWorkspace, WorkspaceSummary } from "@/types/resume";
 
@@ -28,6 +28,9 @@ export function useResumeWorkspace({
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
+  // Skip the auto-save that the initial load (and re-loads) would otherwise
+  // trigger, so a plain page refresh never writes or shows "저장되었습니다".
+  const skipAutoSaveRef = useRef(true);
   const storageMode = useMemo(() => getStorageMode(), []);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export function useResumeWorkspace({
     let active = true;
     setIsLoading(true);
     setHasLoadedWorkspace(false);
+    skipAutoSaveRef.current = true;
 
     loadWorkspace(ownerId, defaultProfile, defaultCompanies, defaultExperiences, fallbackOwnerIds)
       .then((workspace) => {
@@ -69,6 +73,12 @@ export function useResumeWorkspace({
     if (!ownerId || isLoading) return;
     if (!hasLoadedWorkspace) return;
     if (!canSave) return;
+
+    // The state change that just hydrated the workspace must not auto-save.
+    if (skipAutoSaveRef.current) {
+      skipAutoSaveRef.current = false;
+      return;
+    }
 
     const timer = window.setTimeout(() => {
       const workspace: ResumeWorkspace = {
