@@ -107,8 +107,8 @@ export function ExperienceForm({
             </FormField>
             <FormField label="기간" error={errors.period}>
               <div className="space-y-2">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="space-y-1">
+                <div className="flex items-end gap-2">
+                  <label className="min-w-0 flex-1 space-y-1">
                     <span className="flex items-center gap-1.5 text-[12px] font-medium leading-4 text-slate-500">
                       <CalendarDays className="h-3.5 w-3.5" />
                       시작
@@ -119,7 +119,7 @@ export function ExperienceForm({
                       onChange={(e) => updateField("period", buildPeriodValue(e.target.value, periodDates.endDate, periodDates.isPresent))}
                     />
                   </label>
-                  <label className="space-y-1">
+                  <label className="min-w-0 flex-1 space-y-1">
                     <span className="flex items-center gap-1.5 text-[12px] font-medium leading-4 text-slate-500">
                       <CalendarDays className="h-3.5 w-3.5" />
                       종료
@@ -131,16 +131,16 @@ export function ExperienceForm({
                       onChange={(e) => updateField("period", buildPeriodValue(periodDates.startDate, e.target.value, periodDates.isPresent))}
                     />
                   </label>
+                  <label className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap text-[12px] font-medium leading-4 text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={periodDates.isPresent}
+                      onChange={(e) => updateField("period", buildPeriodValue(periodDates.startDate, periodDates.endDate, e.target.checked))}
+                      className="h-4 w-4 accent-slate-900"
+                    />
+                    현재 진행 중
+                  </label>
                 </div>
-                <label className="flex items-center gap-2 text-[12px] font-medium leading-4 text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={periodDates.isPresent}
-                    onChange={(e) => updateField("period", buildPeriodValue(periodDates.startDate, periodDates.endDate, e.target.checked))}
-                    className="h-4 w-4 accent-slate-900"
-                  />
-                  현재 진행 중
-                </label>
                 <p className="text-[12px] leading-4 text-slate-500">{form.period || "시작일과 종료일을 선택하세요."}</p>
               </div>
             </FormField>
