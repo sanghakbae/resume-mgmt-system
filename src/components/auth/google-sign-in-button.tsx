@@ -1,88 +1,49 @@
-import { useEffect, useRef } from "react";
-import type { GoogleCredentialResponse, GoogleWindow } from "@/types/google";
-
 type GoogleSignInButtonProps = {
-  clientId: string;
   disabled?: boolean;
   compact?: boolean;
-  onSuccess: (response: GoogleCredentialResponse, nonce?: string) => void | Promise<void>;
+  onSuccess: () => void | Promise<void>;
+  /** Kept for backward compatibility; unused with Firebase popup sign-in. */
+  clientId?: string;
 };
 
-export function GoogleSignInButton({ clientId, disabled, compact = false, onSuccess }: GoogleSignInButtonProps) {
-  const buttonRef = useRef<HTMLDivElement | null>(null);
-  const googleRef = useRef<GoogleWindow["google"] | null>(null);
-  const nonceRef = useRef<string>(createAuthNonce());
-
-  useEffect(() => {
-    if (disabled || (compact ? false : !buttonRef.current)) return;
-
-    let cancelled = false;
-    const googleWindow = window as GoogleWindow;
-    const google = googleWindow.google;
-    if (!google) return;
-    googleRef.current = google;
-
-    const initializeGoogleButton = async () => {
-      const hashedNonce = await sha256(nonceRef.current);
-      if (cancelled) return;
-
-      if (buttonRef.current) {
-        buttonRef.current.innerHTML = "";
-      }
-      const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
-      const buttonWidth = buttonRef.current ? Math.min(Math.max(buttonRef.current.clientWidth, 160), 360) : 160;
-
-      google.accounts.id.disableAutoSelect();
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => onSuccess(response, nonceRef.current),
-        auto_select: false,
-        nonce: hashedNonce,
-        ux_mode: "popup",
-      });
-
-      if (compact) return;
-
-      google.accounts.id.renderButton(buttonRef.current, {
-        theme: "outline",
-        size: isMobileViewport ? "small" : "medium",
-        text: isMobileViewport ? "signin" : "signin_with",
-        shape: isMobileViewport ? "rectangular" : "pill",
-        width: buttonWidth,
-      });
-    };
-
-    void initializeGoogleButton();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clientId, compact, disabled, onSuccess]);
-
-  if (compact) {
-    return (
-      <button
-        type="button"
-        className={`google-sign-in-button flex h-7 w-full items-center justify-center gap-1 rounded-[6px] border border-slate-200 bg-white px-2 text-[12px] font-medium leading-4 text-slate-600 ${disabled ? "pointer-events-none opacity-60" : ""}`}
-        onClick={() => googleRef.current?.accounts.id.prompt()}
-      >
-        <span className="font-semibold text-blue-600">G</span>
-        로그인
-      </button>
-    );
-  }
-
-  return <div ref={buttonRef} className={`google-sign-in-button h-7 w-full ${disabled ? "pointer-events-none opacity-60" : ""}`} />;
+export function GoogleSignInButton({ disabled, compact = false, onSuccess }: GoogleSignInButtonProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        void onSuccess();
+      }}
+      className={`google-sign-in-button flex h-7 w-full items-center justify-center gap-1.5 rounded-[6px] border border-slate-200 bg-white px-2 text-[12px] font-medium leading-4 text-slate-700 shadow-sm transition hover:bg-slate-50 ${
+        disabled ? "pointer-events-none opacity-60" : ""
+      }`}
+      aria-label="Google 계정으로 로그인"
+    >
+      <GoogleLogo />
+      <span>{compact ? "로그인" : "Google로 로그인"}</span>
+    </button>
+  );
 }
 
-function createAuthNonce() {
-  const bytes = new Uint8Array(16);
-  window.crypto?.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-async function sha256(value: string) {
-  const bytes = new TextEncoder().encode(value);
-  const hashBuffer = await window.crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(hashBuffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function GoogleLogo() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true" className="shrink-0">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.583-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+      />
+    </svg>
+  );
 }

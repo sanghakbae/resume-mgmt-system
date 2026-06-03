@@ -15,7 +15,7 @@ import { useResumeWorkspace } from "@/hooks/use-resume-workspace";
 import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
-import { isAssetUploadConfigured, uploadResumeAsset } from "@/lib/firebase";
+import { isAssetUploadConfigured, isFirebaseConfigured, uploadResumeAsset } from "@/lib/firebase";
 import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
@@ -743,12 +743,12 @@ export default function App() {
                       </div>
                     </div>
                   ) : null}
-                  {!user && googleClientId ? (
-                    <div className={`${publicHeaderControlClass} hidden shrink md:block`}>
-                      <GoogleSignInButton clientId={googleClientId} compact={isMobilePreview} disabled={!isReady} onSuccess={signIn} />
+                  {!user && isFirebaseConfigured ? (
+                    <div className={`${publicHeaderControlClass} shrink-0`}>
+                      <GoogleSignInButton compact={isMobilePreview} disabled={!isReady} onSuccess={signIn} />
                     </div>
                   ) : null}
-                  {!user && !googleClientId ? (
+                  {!user && !isFirebaseConfigured ? (
                     <div className={`${mobileHeaderChipClass} flex items-center border-amber-200 bg-amber-50 text-[10px] leading-4 text-amber-700 md:h-auto md:w-auto md:px-2.5 md:py-1 md:text-[12px]`}>
                       현재 배포본에 Google 로그인 설정이 연결되지 않아 편집 로그인을 사용할 수 없습니다.
                     </div>

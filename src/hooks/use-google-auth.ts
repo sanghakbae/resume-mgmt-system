@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut as firebaseSignOut } from "firebase/auth";
-import { normalizeGoogleUser, parseGoogleCredential } from "@/lib/google-auth";
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
+import { normalizeGoogleUser } from "@/lib/google-auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import type { GoogleCredentialResponse, GoogleWindow } from "@/types/google";
 import type { GoogleUser } from "@/types/resume";
 
 const SESSION_STORAGE_KEY = "resume.auth.session";
-const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
 function readStoredSession(allowedEmails: string[]): GoogleUser | null {
   if (typeof window === "undefined") return null;
@@ -21,36 +19,10 @@ function readStoredSession(allowedEmails: string[]): GoogleUser | null {
       return null;
     }
 
-    window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(parsed));
     return parsed;
   } catch {
     return null;
   }
-}
-
-function injectGoogleScript() {
-  return new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${GOOGLE_SCRIPT_SRC}"]`);
-
-    if (existingScript) {
-      if ((window as GoogleWindow).google) {
-        resolve();
-        return;
-      }
-
-      existingScript.addEventListener("load", () => resolve(), { once: true });
-      existingScript.addEventListener("error", () => reject(new Error("Failed to load Google script")), { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = GOOGLE_SCRIPT_SRC;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Google script"));
-    document.head.appendChild(script);
-  });
 }
 
 export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessage?: string; enabled?: boolean }) {
@@ -62,7 +34,8 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
   const deniedMessage = options?.deniedMessage ?? "관리자 계정만 로그인 가능합니다.";
   const enabled = options?.enabled ?? true;
   const [user, setUser] = useState<GoogleUser | null>(() => readStoredSession(allowedEmails));
-  const [isReady, setIsReady] = useState(!enabled);
+  // Popup sign-in has no external script to load, so it is ready as soon as Firebase is configured.
+  const isReady = !enabled || isFirebaseConfigured;
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,38 +47,25 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
   }, [allowedEmails, user]);
 
   useEffect(() => {
-    if (!enabled) {
-      setIsReady(true);
-      setError(null);
-      return;
-    }
-
-    let mounted = true;
-
-    injectGoogleScript()
-      .then(() => {
-        if (!mounted) return;
-        setIsReady(true);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setError("Google 로그인 스크립트를 불러오지 못했습니다.");
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [enabled]);
-
-  useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (sessionUser) => {
+    const firebaseAuth = auth;
+    const unsubscribe = onAuthStateChanged(firebaseAuth, (sessionUser) => {
       if (!sessionUser?.email) {
         window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
         setUser(null);
+        return;
+      }
+
+      const email = sessionUser.email.toLowerCase();
+      if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
+        // A non-editor signed in: drop the Firebase session so it can't be reused.
+        void firebaseSignOut(firebaseAuth).catch(() => undefined);
+        window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        setUser(null);
+        setError(deniedMessage);
         return;
       }
 
@@ -117,46 +77,43 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
       });
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
+      setError(null);
     });
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [allowedEmails, deniedMessage]);
 
-  const signIn = useCallback(async (response: GoogleCredentialResponse, nonce?: string) => {
+  const signIn = useCallback(async () => {
+    if (!isFirebaseConfigured || !auth) {
+      setError("Firebase 로그인 설정이 연결되지 않았습니다.");
+      return;
+    }
+
     try {
-      const nextUser = parseGoogleCredential(response.credential);
-      const normalizedEmail = nextUser.email.toLowerCase();
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const result = await signInWithPopup(auth, provider);
 
-      if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
-        setError(deniedMessage);
-        if (isFirebaseConfigured && auth) {
-          await firebaseSignOut(auth).catch(() => undefined);
-        }
+      const email = result.user.email?.toLowerCase() ?? "";
+      if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
+        await firebaseSignOut(auth).catch(() => undefined);
         window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
         setUser(null);
+        setError(deniedMessage);
         return;
       }
 
-      if (isFirebaseConfigured && auth) {
-        try {
-          const credential = GoogleAuthProvider.credential(response.credential);
-          await signInWithCredential(auth, credential);
-        } catch (signInError) {
-          const message = signInError instanceof Error ? signInError.message : String(signInError);
-          setError(`Firebase 인증에 실패했습니다: ${message}`);
-          window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-          setUser(null);
-          return;
-        }
-      }
-
-      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-      setUser(nextUser);
       setError(null);
-    } catch {
-      setError("Google 로그인 정보를 처리하지 못했습니다.");
+      // onAuthStateChanged populates the user state.
+    } catch (signInError) {
+      const code = (signInError as { code?: string })?.code ?? "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        return; // User dismissed the popup; not a real error.
+      }
+      const message = signInError instanceof Error ? signInError.message : String(signInError);
+      setError(`Firebase 인증에 실패했습니다: ${message}`);
     }
   }, [allowedEmails, deniedMessage]);
 
@@ -167,9 +124,6 @@ export function useGoogleAuth(options?: { allowedEmails?: string[]; deniedMessag
     if (isFirebaseConfigured && auth) {
       await firebaseSignOut(auth);
     }
-
-    const googleWindow = window as GoogleWindow;
-    googleWindow.google?.accounts.id.disableAutoSelect();
   }, []);
 
   return {
