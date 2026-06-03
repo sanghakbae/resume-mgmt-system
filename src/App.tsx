@@ -486,7 +486,6 @@ export default function App() {
     const previousSection = selectedEditorSection;
     setIsEditMode(false);
     setSelectedEditorSection("dashboard");
-    document.documentElement.classList.add("is-exporting");
 
     // Let the forced layout render before capturing.
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -567,28 +566,21 @@ export default function App() {
         },
       };
 
-      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "p" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      // Each section becomes a single continuous page sized exactly to its content,
+      // so nothing is sliced across A4 page breaks (which caused headers to appear
+      // cut off at the bottom of one page and repeated on the next).
+      const PAGE_WIDTH_MM = 210; // A4 width
       const margin = 5;
-      const usableWidth = pageWidth - margin * 2;
-      const usablePageHeight = pageHeight - margin * 2;
-
-      // Always render the PDF at a fixed desktop width so a download from a phone
-      // produces the desktop layout, not the narrow mobile one. Browsers also cap
-      // canvas size (~16k px, esp. Safari/iOS); a capture that exceeds it comes back
-      // as an empty 0×0 canvas, so step the scale down until the capture succeeds.
+      const contentWidthMm = PAGE_WIDTH_MM - margin * 2;
+      // Render at a fixed desktop width so a download from a phone still uses the
+      // desktop layout. Chrome handles very large canvases (scale 2 stays crisp);
+      // Safari/iOS cap at ~16k px and return an empty 0×0 canvas, so step down then.
       const EXPORT_WIDTH = 1024;
-      let renderedPages = 0;
+      const scaleCandidates = [2, 1.5, 1, 0.75, 0.5];
 
-      for (let sectionIndex = 0; sectionIndex < captureTargets.length; sectionIndex++) {
-        const sectionEl = captureTargets[sectionIndex];
+      let pdf: InstanceType<typeof jsPDF> | null = null;
 
-        // Capture at the sharpest scale the browser allows. Chrome handles very large
-        // canvases (~65k px / 268M px area) so scale 2 stays crisp; Safari/iOS cap at
-        // ~16k px and return an empty 0×0 canvas, so step the scale down then.
-        const scaleCandidates = [2, 1.5, 1, 0.75, 0.5];
-
+      for (const sectionEl of captureTargets) {
         let sectionCanvas: HTMLCanvasElement | null = null;
         for (const scale of scaleCandidates) {
           const candidate = await html2canvas(sectionEl, {
@@ -603,25 +595,20 @@ export default function App() {
         }
 
         if (!sectionCanvas) continue;
-        const imgHeight = (sectionCanvas.height * usableWidth) / sectionCanvas.width;
-        if (!Number.isFinite(imgHeight) || imgHeight <= 0) continue;
+        const imgHeightMm = (sectionCanvas.height * contentWidthMm) / sectionCanvas.width;
+        if (!Number.isFinite(imgHeightMm) || imgHeightMm <= 0) continue;
+        const pageHeightMm = imgHeightMm + margin * 2;
         const imgData = sectionCanvas.toDataURL("image/jpeg", 0.95);
 
-        if (renderedPages > 0) pdf.addPage();
-        renderedPages += 1;
-
-        let heightLeft = imgHeight;
-        let position = margin;
-        pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
-        heightLeft -= usablePageHeight;
-
-        while (heightLeft > 0) {
-          position = margin - (imgHeight - heightLeft);
-          pdf.addPage();
-          pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
-          heightLeft -= usablePageHeight;
+        if (!pdf) {
+          pdf = new jsPDF({ unit: "mm", format: [PAGE_WIDTH_MM, pageHeightMm], orientation: "p" });
+        } else {
+          pdf.addPage([PAGE_WIDTH_MM, pageHeightMm], "p");
         }
+        pdf.addImage(imgData, "JPEG", margin, margin, contentWidthMm, imgHeightMm);
       }
+
+      if (!pdf) throw new Error("이력서 콘텐츠를 캡처하지 못했습니다.");
 
       const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
       pdf.save(`${safeName}_이력서.pdf`);
