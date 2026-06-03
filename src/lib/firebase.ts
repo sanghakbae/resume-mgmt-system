@@ -32,7 +32,7 @@ if (isFirebaseConfigured) {
   authInstance = getAuth(app);
   firestoreInstance = getFirestore(app);
 
-  // Match the previous Supabase behaviour where the session lived in sessionStorage.
+  // Keep the auth session scoped to the browser tab via sessionStorage.
   void setPersistence(authInstance, browserSessionPersistence).catch(() => undefined);
 }
 
