@@ -562,28 +562,41 @@ export default function App() {
       const usableWidth = pageWidth - margin * 2;
       const usablePageHeight = pageHeight - margin * 2;
 
-      // Browsers cap canvas dimensions (~16k px on Safari/iOS); a very tall resume
-      // at scale 2 would exceed that and make html2canvas return an empty 0×0
-      // canvas, which then crashes jsPDF with "Invalid argument passed to scale".
+      // Always render the PDF at a fixed desktop width so a download from a phone
+      // produces the desktop layout, not the narrow mobile one. Browsers also cap
+      // canvas size (~16k px, esp. Safari/iOS); a capture that exceeds it comes back
+      // as an empty 0×0 canvas, so step the scale down until the capture succeeds.
+      const EXPORT_WIDTH = 1024;
       const MAX_CANVAS_DIM = 14000;
       let renderedPages = 0;
 
       for (let sectionIndex = 0; sectionIndex < captureTargets.length; sectionIndex++) {
         const sectionEl = captureTargets[sectionIndex];
-        const naturalWidth = sectionEl.scrollWidth || Math.ceil(sectionEl.getBoundingClientRect().width);
-        const naturalHeight = sectionEl.scrollHeight || Math.ceil(sectionEl.getBoundingClientRect().height);
-        const safeScale = Math.max(
+
+        // Estimate the reflowed height at EXPORT_WIDTH to pick a safe starting scale.
+        const liveWidth = sectionEl.scrollWidth || sectionEl.getBoundingClientRect().width || EXPORT_WIDTH;
+        const liveHeight = sectionEl.scrollHeight || sectionEl.getBoundingClientRect().height || 0;
+        const estimatedHeight = liveHeight * (liveWidth / EXPORT_WIDTH);
+        const startScale = Math.max(
           0.5,
-          Math.min(2, MAX_CANVAS_DIM / Math.max(naturalWidth, 1), MAX_CANVAS_DIM / Math.max(naturalHeight, 1)),
+          Math.min(2, MAX_CANVAS_DIM / EXPORT_WIDTH, MAX_CANVAS_DIM / Math.max(estimatedHeight, 1)),
         );
+        const scaleCandidates = [startScale, 1, 0.75, 0.5].filter((value) => value <= startScale + 1e-6);
 
-        const sectionCanvas = await html2canvas(sectionEl, {
-          ...captureOptions,
-          scale: safeScale,
-          windowWidth: naturalWidth || undefined,
-        });
+        let sectionCanvas: HTMLCanvasElement | null = null;
+        for (const scale of scaleCandidates) {
+          const candidate = await html2canvas(sectionEl, {
+            ...captureOptions,
+            scale,
+            windowWidth: EXPORT_WIDTH,
+          });
+          if (candidate.width && candidate.height) {
+            sectionCanvas = candidate;
+            break;
+          }
+        }
 
-        if (!sectionCanvas.width || !sectionCanvas.height) continue;
+        if (!sectionCanvas) continue;
         const imgHeight = (sectionCanvas.height * usableWidth) / sectionCanvas.width;
         if (!Number.isFinite(imgHeight) || imgHeight <= 0) continue;
         const imgData = sectionCanvas.toDataURL("image/jpeg", 0.95);
