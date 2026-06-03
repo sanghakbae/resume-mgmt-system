@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, Building2, BriefcaseBusiness, Download, ExternalLink, Eye, FileText, FolderKanban, LogOut, Pencil, RotateCcw, Settings2, ShieldAlert, ShieldCheck, UserRound, X } from "lucide-react";
-import { LoginPage } from "@/components/auth/login-page";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +28,6 @@ import type {
   VisitLogItem,
 } from "@/types/resume";
 
-const DEFAULT_GOOGLE_CLIENT_ID = "924920443826-k59m97pgabmdb42qv9cq63plmuuvvn7s.apps.googleusercontent.com";
 const DEFAULT_PRIMARY_WORKSPACE_ID = "public-resume";
 const FONT_STORAGE_KEY = "resume.font-family";
 const FONT_OPTIONS = [
@@ -109,7 +107,6 @@ function getExperienceImages(item: ExperienceItem) {
 }
 
 export default function App() {
-  const googleClientId = ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || DEFAULT_GOOGLE_CLIENT_ID).trim();
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
   const isMobilePreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mobilePreview") === "1";
   const adminEmails = parseEnvEmailList(import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
