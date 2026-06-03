@@ -153,6 +153,29 @@
   }
 }
 
+/* Mobile (iPhone) readability: bump the very small text that is hard to read on
+   phones. Scoped to <768px so desktop and PDF export are unaffected; the rotating
+   skill shield keeps its own tuned sizing. */
+@media (max-width: 767px) {
+  .resume-app [class*="text-[9px]"]:not(.resume-skill-shield__item),
+  .resume-app [class*="text-[10px]"]:not(.resume-skill-shield__item) {
+    font-size: 12px !important;
+  }
+
+  .resume-app [class*="text-[11px]"]:not(.resume-skill-shield__item) {
+    font-size: 12.5px !important;
+  }
+
+  .resume-app [class*="text-[12px]"]:not(.resume-skill-shield__item) {
+    font-size: 13px !important;
+  }
+
+  /* Give the bumped text enough breathing room where leading was very tight. */
+  .resume-app [class*="leading-3"]:not(.resume-skill-shield__item) {
+    line-height: 1.35 !important;
+  }
+}
+
 html.is-exporting {
   background: #fff !important;
 }
