@@ -720,7 +720,7 @@ export default function App() {
   };
 
   return (
-    <div className="resume-app mx-auto min-h-[100dvh] max-w-[1440px] overflow-x-hidden bg-slate-100 px-2 py-2 sm:px-4 md:px-6 md:py-6">
+    <div className="resume-app min-h-[100dvh] w-full overflow-x-hidden bg-slate-100 px-2 py-2 sm:px-4 md:px-6 md:py-6">
       {linkPopupUrl ? <ProjectLinkPopup url={linkPopupUrl} onClose={() => setLinkPopupUrl(null)} /> : null}
       {showSavedNotice ? (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-4 screen-only">
