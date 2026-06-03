@@ -579,21 +579,15 @@ export default function App() {
       // canvas size (~16k px, esp. Safari/iOS); a capture that exceeds it comes back
       // as an empty 0×0 canvas, so step the scale down until the capture succeeds.
       const EXPORT_WIDTH = 1024;
-      const MAX_CANVAS_DIM = 14000;
       let renderedPages = 0;
 
       for (let sectionIndex = 0; sectionIndex < captureTargets.length; sectionIndex++) {
         const sectionEl = captureTargets[sectionIndex];
 
-        // Estimate the reflowed height at EXPORT_WIDTH to pick a safe starting scale.
-        const liveWidth = sectionEl.scrollWidth || sectionEl.getBoundingClientRect().width || EXPORT_WIDTH;
-        const liveHeight = sectionEl.scrollHeight || sectionEl.getBoundingClientRect().height || 0;
-        const estimatedHeight = liveHeight * (liveWidth / EXPORT_WIDTH);
-        const startScale = Math.max(
-          0.5,
-          Math.min(2, MAX_CANVAS_DIM / EXPORT_WIDTH, MAX_CANVAS_DIM / Math.max(estimatedHeight, 1)),
-        );
-        const scaleCandidates = [startScale, 1, 0.75, 0.5].filter((value) => value <= startScale + 1e-6);
+        // Capture at the sharpest scale the browser allows. Chrome handles very large
+        // canvases (~65k px / 268M px area) so scale 2 stays crisp; Safari/iOS cap at
+        // ~16k px and return an empty 0×0 canvas, so step the scale down then.
+        const scaleCandidates = [2, 1.5, 1, 0.75, 0.5];
 
         let sectionCanvas: HTMLCanvasElement | null = null;
         for (const scale of scaleCandidates) {
