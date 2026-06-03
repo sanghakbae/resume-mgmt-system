@@ -478,7 +478,19 @@ export default function App() {
   const downloadResumePdf = async () => {
     if (isDownloadingPdf) return;
     setIsDownloadingPdf(true);
+
+    // The full resume (resume/portfolio/technical sections) only renders in
+    // preview mode on the dashboard tab; force that so the PDF contains the whole
+    // résumé and not just the editor's "경력 요약" dashboard. Restored afterwards.
+    const previousEditMode = isEditMode;
+    const previousSection = selectedEditorSection;
+    setIsEditMode(false);
+    setSelectedEditorSection("dashboard");
     document.documentElement.classList.add("is-exporting");
+
+    // Let the forced layout render before capturing.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 60));
 
     const originalSrcs = new Map<HTMLImageElement, string>();
 
@@ -558,7 +570,7 @@ export default function App() {
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "p" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+      const margin = 5;
       const usableWidth = pageWidth - margin * 2;
       const usablePageHeight = pageHeight - margin * 2;
 
@@ -637,6 +649,8 @@ export default function App() {
         img.src = src;
       });
       document.documentElement.classList.remove("is-exporting");
+      setIsEditMode(previousEditMode);
+      setSelectedEditorSection(previousSection);
       setIsDownloadingPdf(false);
     }
   };
