@@ -1,6 +1,6 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { browserSessionPersistence, getAuth, setPersistence, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 
 const enableFirebase = ((import.meta.env.VITE_ENABLE_FIREBASE as string | undefined) ?? "false") === "true";
 const apiKey = (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim();
@@ -30,7 +30,14 @@ if (isFirebaseConfigured) {
     messagingSenderId,
   });
   authInstance = getAuth(app);
-  firestoreInstance = getFirestore(app);
+  // Mirror the old JSON/Supabase behaviour: drop undefined fields instead of
+  // throwing, since resume items carry optional fields (image, url, etc.).
+  try {
+    firestoreInstance = initializeFirestore(app, { ignoreUndefinedProperties: true });
+  } catch {
+    // Already initialized (e.g. during dev HMR) — reuse the existing instance.
+    firestoreInstance = getFirestore(app);
+  }
 
   // Keep the auth session scoped to the browser tab via sessionStorage.
   void setPersistence(authInstance, browserSessionPersistence).catch(() => undefined);
