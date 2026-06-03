@@ -116,7 +116,9 @@ export default function App() {
   const editorEmails = parseEnvEmailList(import.meta.env.VITE_EDITOR_EMAILS as string | undefined);
   const configuredWorkspaceId = (import.meta.env.VITE_PRIMARY_WORKSPACE_ID as string | undefined)?.trim();
   const primaryWorkspaceId = (configuredWorkspaceId || DEFAULT_PRIMARY_WORKSPACE_ID).toLowerCase();
-  const allowedEmails = isPublicResumeMode ? [] : adminEmails;
+  // In public mode, restrict sign-in itself to the editor accounts (e.g. totoriverce@gmail.com);
+  // other Google accounts are rejected at login rather than allowed in as view-only.
+  const allowedEmails = isPublicResumeMode ? editorEmails : adminEmails;
   const isLocalEditorMode = !isPublicResumeMode;
   const { user, isReady, error: authError, signIn, signOut } = useGoogleAuth({
     allowedEmails,
