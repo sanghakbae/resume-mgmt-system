@@ -562,16 +562,34 @@ export default function App() {
       const usableWidth = pageWidth - margin * 2;
       const usablePageHeight = pageHeight - margin * 2;
 
+      // Browsers cap canvas dimensions (~16k px on Safari/iOS); a very tall resume
+      // at scale 2 would exceed that and make html2canvas return an empty 0×0
+      // canvas, which then crashes jsPDF with "Invalid argument passed to scale".
+      const MAX_CANVAS_DIM = 14000;
+      let renderedPages = 0;
+
       for (let sectionIndex = 0; sectionIndex < captureTargets.length; sectionIndex++) {
         const sectionEl = captureTargets[sectionIndex];
+        const naturalWidth = sectionEl.scrollWidth || Math.ceil(sectionEl.getBoundingClientRect().width);
+        const naturalHeight = sectionEl.scrollHeight || Math.ceil(sectionEl.getBoundingClientRect().height);
+        const safeScale = Math.max(
+          0.5,
+          Math.min(2, MAX_CANVAS_DIM / Math.max(naturalWidth, 1), MAX_CANVAS_DIM / Math.max(naturalHeight, 1)),
+        );
+
         const sectionCanvas = await html2canvas(sectionEl, {
           ...captureOptions,
-          windowWidth: sectionEl.scrollWidth,
+          scale: safeScale,
+          windowWidth: naturalWidth || undefined,
         });
+
+        if (!sectionCanvas.width || !sectionCanvas.height) continue;
         const imgHeight = (sectionCanvas.height * usableWidth) / sectionCanvas.width;
+        if (!Number.isFinite(imgHeight) || imgHeight <= 0) continue;
         const imgData = sectionCanvas.toDataURL("image/jpeg", 0.95);
 
-        if (sectionIndex > 0) pdf.addPage();
+        if (renderedPages > 0) pdf.addPage();
+        renderedPages += 1;
 
         let heightLeft = imgHeight;
         let position = margin;
