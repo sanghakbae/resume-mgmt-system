@@ -16,7 +16,7 @@ import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
 import { isAssetUploadConfigured, isFirebaseConfigured, uploadResumeAsset } from "@/lib/firebase";
 import { isEmptyRichText, listToHtml } from "@/lib/rich-text";
-import { fetchPublicVisitLogs, getPublicVisitCount, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
+import { fetchPublicVisitLogs, getPublicVisitCount, getVisitorNetworkInfo, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
   CompanyFormValues,
   CompanyProfile,
@@ -261,12 +261,14 @@ export default function App() {
 
         let nextCount: number | null = null;
         try {
+          const visitorInfo = await getVisitorNetworkInfo();
           nextCount = await recordPublicVisitLog({
             ownerId: activeOwnerId,
             mode: isPublicResumeMode ? "공개 보기" : "편집 모드",
             ownerName: profile.name.trim() || "이력서",
             userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
             userEmail: user?.email ?? "",
+            visitorInfo,
           });
         } catch (logError) {
           console.warn("방문 로그 기록에 실패했습니다.", logError);
@@ -488,6 +490,7 @@ export default function App() {
     const previousSection = selectedEditorSection;
     setIsEditMode(false);
     setSelectedEditorSection("dashboard");
+    document.documentElement.classList.add("is-exporting");
 
     // Let the forced layout render before capturing.
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -616,11 +619,13 @@ export default function App() {
       pdf.save(`${safeName}_이력서.pdf`);
 
       try {
+        const visitorInfo = await getVisitorNetworkInfo();
         await recordPublicDownloadLog({
           ownerId: activeOwnerId,
           ownerName: derivedProfile.name?.trim() || "이력서",
           userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
           userEmail: user?.email ?? "",
+          visitorInfo,
         });
       } catch (logError) {
         console.warn("PDF 다운로드 로그 기록에 실패했습니다.", logError);
@@ -1125,7 +1130,7 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
         </div>
 
         <div className="overflow-x-auto rounded-[10px] border border-slate-200">
-          <table className="min-w-[640px] w-full border-collapse text-center text-[13px] leading-5">
+          <table className="min-w-[920px] w-full border-collapse text-center text-[13px] leading-5">
             <thead className="bg-slate-50">
               <tr className="text-slate-500">
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">시각</th>
@@ -1133,6 +1138,8 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">사용자</th>
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">대상</th>
                 <th className="border-b border-slate-200 px-3 py-2 font-bold">IP</th>
+                <th className="border-b border-slate-200 px-3 py-2 font-bold">위치</th>
+                <th className="border-b border-slate-200 px-3 py-2 font-bold">레퍼럴</th>
               </tr>
             </thead>
             <tbody>
@@ -1144,11 +1151,13 @@ function VisitLogPanel({ logs }: { logs: VisitLogItem[] }) {
                     <td className="border-b border-slate-100 px-3 py-2 text-slate-700">{log.userLabel}</td>
                     <td className="border-b border-slate-100 px-3 py-2 text-slate-700">{log.ownerName}</td>
                     <td className="border-b border-slate-100 px-3 py-2 text-slate-500">{log.ipAddress ?? "-"}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 text-slate-500">{log.locationLabel ?? log.countryCode ?? "-"}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 text-slate-500">{log.referrer ?? "-"}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="px-3 py-4 text-slate-500" colSpan={5}>
+                  <td className="px-3 py-4 text-slate-500" colSpan={7}>
                     아직 로그가 없습니다.
                   </td>
                 </tr>

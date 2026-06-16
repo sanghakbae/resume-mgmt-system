@@ -17,6 +17,13 @@ import { db, isFirebaseConfigured } from "@/lib/firebase";
 const COUNTERS_COLLECTION = "resume_visit_counters";
 const LOGS_COLLECTION = "resume_visit_logs";
 
+type VisitorNetworkInfo = {
+  ipAddress?: string;
+  countryCode?: string;
+  locationLabel?: string;
+  referrer?: string;
+};
+
 export function shouldCountPublicVisit(isPublicResumeMode: boolean, isLoggedIn: boolean) {
   if (!isPublicResumeMode || isLoggedIn || typeof window === "undefined") return false;
   return !isLocalHost(window.location.hostname);
@@ -52,6 +59,7 @@ export async function recordPublicVisitLog(input: {
   ownerName: string;
   userLabel: string;
   userEmail?: string;
+  visitorInfo?: VisitorNetworkInfo;
 }) {
   if (!isFirebaseConfigured || !db) return null;
 
@@ -65,6 +73,10 @@ export async function recordPublicVisitLog(input: {
     ownerName: input.ownerName,
     userLabel: input.userLabel,
     userEmail: input.userEmail?.trim() || null,
+    ipAddress: input.visitorInfo?.ipAddress || null,
+    countryCode: input.visitorInfo?.countryCode || null,
+    locationLabel: input.visitorInfo?.locationLabel || null,
+    referrer: input.visitorInfo?.referrer || null,
     visitedAt: Timestamp.now(),
   });
 
@@ -82,6 +94,7 @@ export async function recordPublicDownloadLog(input: {
   ownerName: string;
   userLabel: string;
   userEmail?: string;
+  visitorInfo?: VisitorNetworkInfo;
 }) {
   if (!isFirebaseConfigured || !db) return null;
 
@@ -91,6 +104,10 @@ export async function recordPublicDownloadLog(input: {
     ownerName: input.ownerName,
     userLabel: input.userLabel,
     userEmail: input.userEmail?.trim() || null,
+    ipAddress: input.visitorInfo?.ipAddress || null,
+    countryCode: input.visitorInfo?.countryCode || null,
+    locationLabel: input.visitorInfo?.locationLabel || null,
+    referrer: input.visitorInfo?.referrer || null,
     visitedAt: Timestamp.now(),
   });
 
@@ -103,6 +120,11 @@ type VisitLogDoc = {
   mode: string;
   ownerName: string;
   userLabel: string;
+  userEmail?: string | null;
+  ipAddress?: string | null;
+  countryCode?: string | null;
+  locationLabel?: string | null;
+  referrer?: string | null;
 };
 
 export async function fetchPublicVisitLogs(ownerId: string, limit = 50) {
@@ -125,9 +147,84 @@ export async function fetchPublicVisitLogs(ownerId: string, limit = 50) {
       mode: data.mode,
       ownerName: data.ownerName,
       userLabel: data.userLabel,
-      userEmail: "",
+      userEmail: data.userEmail ?? "",
+      ipAddress: data.ipAddress ?? undefined,
+      countryCode: data.countryCode ?? undefined,
+      locationLabel: data.locationLabel ?? undefined,
+      referrer: data.referrer ?? undefined,
     };
   });
+}
+
+export async function getVisitorNetworkInfo(): Promise<VisitorNetworkInfo> {
+  const referrer = getReadableReferrer();
+
+  if (typeof window === "undefined") {
+    return { referrer };
+  }
+
+  try {
+    const response = await fetch("/cdn-cgi/trace", {
+      cache: "no-store",
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      return { referrer };
+    }
+
+    const trace = parseCloudflareTrace(await response.text());
+    const countryCode = trace.loc?.toUpperCase();
+
+    return {
+      ipAddress: trace.ip,
+      countryCode,
+      locationLabel: countryCode ? formatCountryLabel(countryCode) : undefined,
+      referrer,
+    };
+  } catch {
+    return { referrer };
+  }
+}
+
+function parseCloudflareTrace(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .reduce<Record<string, string>>((result, line) => {
+      const separatorIndex = line.indexOf("=");
+      if (separatorIndex <= 0) return result;
+      const key = line.slice(0, separatorIndex).trim();
+      const entryValue = line.slice(separatorIndex + 1).trim();
+      if (key && entryValue) result[key] = entryValue;
+      return result;
+    }, {});
+}
+
+function getReadableReferrer() {
+  if (typeof document === "undefined") return "";
+
+  const referrer = document.referrer.trim();
+  if (!referrer) return "직접 접속";
+
+  try {
+    const parsed = new URL(referrer);
+    return parsed.hostname.replace(/^www\./, "") || referrer;
+  } catch {
+    return referrer;
+  }
+}
+
+function formatCountryLabel(countryCode: string) {
+  if (countryCode === "XX" || countryCode === "T1") return countryCode;
+
+  try {
+    const displayNames = new Intl.DisplayNames(["ko"], { type: "region" });
+    return displayNames.of(countryCode) ?? countryCode;
+  } catch {
+    return countryCode;
+  }
 }
 
 function isLocalHost(hostname: string) {

@@ -103,6 +103,10 @@
   display: none;
 }
 
+.resume-project-images-mobile {
+  display: none;
+}
+
 @keyframes resume-skill-shield-sway {
   from {
     transform: rotateY(-180deg);
@@ -207,6 +211,10 @@
     display: block;
   }
 
+  .resume-project-images-mobile {
+    display: block;
+  }
+
   .resume-project-description-mobile .resume-rich,
   .resume-responsibility-pill {
     font-size: 12px !important;
@@ -266,7 +274,13 @@ html.is-exporting .resume-app {
 }
 
 html.is-exporting .print-content {
-  width: 100% !important;
+  width: 1024px !important;
+  max-width: 1024px !important;
+}
+
+html.is-exporting [data-pdf-section] {
+  width: 1024px !important;
+  max-width: 1024px !important;
 }
 
 html.is-exporting .resume-skill-shield__frame {
@@ -292,6 +306,10 @@ html.is-exporting .resume-project-description-desktop {
 }
 
 html.is-exporting .resume-project-description-mobile {
+  display: none !important;
+}
+
+html.is-exporting .resume-project-images-mobile {
   display: none !important;
 }
 

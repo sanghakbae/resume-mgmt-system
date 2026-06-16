@@ -53,6 +53,17 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
               className="resume-rich break-keep break-words border-t border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-600"
               dangerouslySetInnerHTML={{ __html: renderRichText(item.description) }}
             />
+            {images.length ? (
+              <div className="resume-project-images-mobile border-t border-slate-200 bg-white px-2.5 py-2">
+                <div className="grid gap-2">
+                  {images.map((image, index) => (
+                    <div key={`${item.id}-mobile-image-${index}`} className="w-full overflow-hidden rounded-[8px] border border-slate-200 bg-slate-50">
+                      <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[360px] w-full object-contain" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </details>
 
           {item.url ? (

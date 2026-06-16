@@ -89,6 +89,9 @@ export type VisitLogItem = {
   ownerName: string;
   userLabel: string;
   ipAddress?: string;
+  locationLabel?: string;
+  countryCode?: string;
+  referrer?: string;
 };
 
 export type CompanyProfile = {
