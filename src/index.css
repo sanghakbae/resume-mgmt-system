@@ -283,6 +283,13 @@ html.is-exporting [data-pdf-section] {
   max-width: 1024px !important;
 }
 
+html.is-exporting [data-export-dashboard],
+html.is-exporting [data-export-intro],
+html.is-exporting [data-export-company] {
+  width: 1024px !important;
+  max-width: 1024px !important;
+}
+
 html.is-exporting .resume-skill-shield__frame {
   animation: none !important;
   transform: none !important;

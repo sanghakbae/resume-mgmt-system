@@ -163,6 +163,16 @@ export async function getVisitorNetworkInfo(): Promise<VisitorNetworkInfo> {
     return { referrer };
   }
 
+  const cloudflareInfo = await getCloudflareVisitorInfo(referrer);
+  if (cloudflareInfo.ipAddress) return cloudflareInfo;
+
+  const fallbackInfo = await getPublicIpFallbackInfo(referrer);
+  if (fallbackInfo.ipAddress) return fallbackInfo;
+
+  return { referrer };
+}
+
+async function getCloudflareVisitorInfo(referrer: string): Promise<VisitorNetworkInfo> {
   try {
     const response = await fetch("/cdn-cgi/trace", {
       cache: "no-store",
@@ -174,12 +184,50 @@ export async function getVisitorNetworkInfo(): Promise<VisitorNetworkInfo> {
     }
 
     const trace = parseCloudflareTrace(await response.text());
+    if (!trace.ip) {
+      return { referrer };
+    }
+
     const countryCode = trace.loc?.toUpperCase();
 
     return {
       ipAddress: trace.ip,
       countryCode,
       locationLabel: countryCode ? formatCountryLabel(countryCode) : undefined,
+      referrer,
+    };
+  } catch {
+    return { referrer };
+  }
+}
+
+async function getPublicIpFallbackInfo(referrer: string): Promise<VisitorNetworkInfo> {
+  try {
+    const response = await fetch("https://ipapi.co/json/", {
+      cache: "no-store",
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      return { referrer };
+    }
+
+    const data = await response.json();
+    const ipAddress = typeof data.ip === "string" ? data.ip : "";
+    if (!ipAddress) {
+      return { referrer };
+    }
+
+    const countryCode = typeof data.country_code === "string" ? data.country_code.toUpperCase() : undefined;
+    const countryName = typeof data.country_name === "string" ? data.country_name : countryCode ? formatCountryLabel(countryCode) : "";
+    const region = typeof data.region === "string" ? data.region : "";
+    const city = typeof data.city === "string" ? data.city : "";
+    const locationLabel = [countryName, region, city].filter(Boolean).join(" / ") || countryCode;
+
+    return {
+      ipAddress,
+      countryCode,
+      locationLabel,
       referrer,
     };
   } catch {

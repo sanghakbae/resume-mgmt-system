@@ -541,8 +541,30 @@ export default function App() {
         import("jspdf"),
       ]);
 
+      const isMobilePdfDownload = window.matchMedia("(max-width: 767px)").matches;
       const sectionEls = Array.from(target.querySelectorAll<HTMLElement>("[data-pdf-section]"));
-      const captureTargets: HTMLElement[] = sectionEls.length ? sectionEls : [target];
+      const captureTargets: HTMLElement[] = (() => {
+        if (!isMobilePdfDownload) return sectionEls.length ? sectionEls : [target];
+
+        const targets: HTMLElement[] = [];
+        const sourceSections = sectionEls.length ? sectionEls : [target];
+        sourceSections.forEach((sectionEl) => {
+          if (sectionEl.dataset.pdfSection !== "resume") {
+            targets.push(sectionEl);
+            return;
+          }
+
+          const resumeParts = [
+            sectionEl.querySelector<HTMLElement>("[data-export-dashboard]"),
+            sectionEl.querySelector<HTMLElement>("[data-export-intro]"),
+            ...Array.from(sectionEl.querySelectorAll<HTMLElement>("[data-export-company]")),
+          ].filter((el): el is HTMLElement => Boolean(el));
+
+          targets.push(...resumeParts);
+        });
+
+        return targets.length ? targets : sourceSections;
+      })();
 
       const captureOptions = {
         scale: 2,
@@ -581,7 +603,7 @@ export default function App() {
       // desktop layout. Chrome handles very large canvases (scale 2 stays crisp);
       // Safari/iOS cap at ~16k px and return an empty 0×0 canvas, so step down then.
       const EXPORT_WIDTH = 1024;
-      const scaleCandidates = [2, 1.5, 1, 0.75, 0.5];
+      const scaleCandidates = isMobilePdfDownload ? [1, 0.75, 0.5] : [2, 1.5, 1, 0.75, 0.5];
 
       let pdf: InstanceType<typeof jsPDF> | null = null;
 
