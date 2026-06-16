@@ -17,10 +17,10 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
   const images = getExperienceImages(item);
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-[10px] border border-slate-200 p-3.5 sm:p-4" data-export-project-card>
-      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <div className="min-w-0 overflow-hidden rounded-[10px] border border-slate-200 px-2.5 py-1.5 sm:p-4" data-export-project-card>
+      <div className="flex min-w-0 flex-col gap-2 sm:gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <h4 className="break-keep text-base font-semibold leading-5 text-slate-900 md:leading-6">{item.title}</h4>
+          <h4 className="break-keep text-[14px] font-semibold leading-5 text-slate-900 md:text-base md:leading-6">{item.title}</h4>
           <p className="mt-1 break-keep text-[13px] leading-4 text-slate-500 md:leading-5">{item.period}</p>
         </div>
 
@@ -38,15 +38,25 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
         ) : null}
       </div>
 
-      <div className="mt-3 grid min-w-0 gap-3">
+      <div className="mt-2 grid min-w-0 gap-2 sm:mt-3 sm:gap-3">
         <div className="min-w-0">
           <div
-            className="resume-rich break-keep break-words text-sm leading-5 text-slate-600 md:leading-6"
+            className="resume-rich resume-project-description-desktop break-keep break-words text-sm leading-5 text-slate-600 md:leading-6"
             dangerouslySetInnerHTML={{ __html: renderRichText(item.description) }}
           />
 
+          <details className="resume-project-description-mobile rounded-[8px] border border-slate-200 bg-slate-50/70">
+            <summary className="cursor-pointer select-none px-3 py-2 text-[13px] font-semibold leading-5 text-slate-800">
+              프로젝트 상세 보기
+            </summary>
+            <div
+              className="resume-rich break-keep break-words border-t border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-600"
+              dangerouslySetInnerHTML={{ __html: renderRichText(item.description) }}
+            />
+          </details>
+
           {item.url ? (
-            <div className="mt-4 border-t border-dashed border-slate-200 pt-3">
+            <div className="mt-2 border-t border-dashed border-slate-200 pt-2 sm:mt-4 sm:pt-3">
               <p className="mb-2 inline-flex items-center gap-1 rounded-[6px] bg-sky-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
                 <ExternalLink className="h-3 w-3" />
                 관련 링크
@@ -101,7 +111,7 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
           ) : null}
 
           {images.length ? (
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="resume-project-images mt-2 grid gap-2 sm:mt-3 sm:grid-cols-2">
               {images.map((image, index) => (
                 <div key={`${item.id}-image-${index}`} className="w-full overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
                   <img src={image} alt={`${item.title} 이미지 ${index + 1}`} className="h-auto max-h-[374px] w-full object-contain" />
@@ -113,7 +123,7 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
       </div>
 
       {item.highlight.length ? (
-        <div className="mt-3 flex flex-wrap items-center gap-1">
+        <div className="mt-2 flex flex-wrap items-center gap-1 sm:mt-3">
           <span className="inline-flex min-h-5 items-center justify-center rounded-[5px] border border-slate-200 bg-slate-900 px-1.5 py-0.5 text-[10px] leading-none text-white">
             {categoryMeta[item.category].label}
           </span>
@@ -127,7 +137,7 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
           ))}
         </div>
       ) : (
-        <div className="mt-3 flex flex-wrap items-center gap-1">
+        <div className="mt-2 flex flex-wrap items-center gap-1 sm:mt-3">
           <span className="inline-flex min-h-5 items-center justify-center rounded-[5px] border border-slate-200 bg-slate-900 px-1.5 py-0.5 text-[10px] leading-none text-white">
             {categoryMeta[item.category].label}
           </span>

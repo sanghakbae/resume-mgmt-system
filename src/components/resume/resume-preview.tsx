@@ -37,7 +37,7 @@ export function ResumePreview({
     <div data-export-resume>
       <div className="space-y-3 md:space-y-4" data-export-resume-content>
         <div
-          className={`rounded-[10px] border border-slate-200 bg-white p-3.5 sm:p-4 md:p-5 ${isCompactHeader ? "grid gap-4 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-start" : "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"}`}
+          className={`rounded-[10px] border border-slate-200 bg-white p-2 sm:p-4 md:p-5 ${isCompactHeader ? "grid gap-2 sm:gap-4 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-start" : "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"}`}
           data-export-intro
         >
           <div className={`flex flex-col ${isCompactHeader ? "items-center gap-0.5" : "gap-3"}`}>
@@ -60,7 +60,7 @@ export function ResumePreview({
             )}
           </div>
 
-          <div className={`grid auto-rows-fr items-stretch ${isCompactHeader ? "w-full gap-2 grid-cols-1 sm:gap-3 sm:grid-cols-2" : "gap-3 grid-cols-1 sm:grid-cols-2"}`}>
+          <div className={`grid items-start ${isCompactHeader ? "w-full gap-2 grid-cols-1 sm:gap-3 sm:grid-cols-2" : "gap-3 grid-cols-1 sm:grid-cols-2"}`}>
             {profileInfoItems.map(({ key, label, icon, linkKey }) => (
               <InfoBox
                 key={key}
@@ -90,7 +90,7 @@ export function ResumePreview({
                 </div>
               </div>
 
-              <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-3.5 sm:p-4">
+              <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-2.5 sm:p-4">
                 <div
                   className="resume-rich break-keep text-sm leading-6 text-slate-600"
                   dangerouslySetInnerHTML={{ __html: renderRichText(company.summary) }}
@@ -105,7 +105,7 @@ export function ResumePreview({
                     {company.responsibilities.map((responsibility) => (
                       <div
                         key={responsibility}
-                        className="flex min-h-[28px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-center text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
+                        className="resume-responsibility-pill flex min-h-[28px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-center text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
                       >
                         {responsibility}
                       </div>
@@ -114,7 +114,7 @@ export function ResumePreview({
                 )}
               </div>
 
-              <div className="p-3.5 sm:p-4">
+              <div className="p-2.5 sm:p-4">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-slate-900 text-white">
                     <BriefcaseBusiness className="h-4 w-4" />
@@ -126,7 +126,7 @@ export function ResumePreview({
                 </div>
 
                 {items.length ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2 sm:space-y-4">
                     {items.map((item) => (
                       <ExperienceCard
                         key={item.id}
@@ -275,28 +275,28 @@ export function CareerDashboard({
   ] as const;
 
   return (
-    <section className="overflow-hidden rounded-[10px] border-2 border-black bg-white">
-      <div className="resume-dashboard-surface rounded-[10px] p-2 md:p-4">
+    <section className="overflow-hidden rounded-[10px] bg-transparent">
+      <div className="resume-dashboard-surface rounded-[10px] p-0.5 md:p-4">
         <div className="flex flex-col gap-2 border-b border-slate-200 pb-2 md:pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="resume-dashboard-icon flex h-9 w-9 items-center justify-center rounded-[10px]">
-              <BarChart3 className="h-4 w-4" />
+            <div className="resume-dashboard-icon flex h-7 w-7 items-center justify-center rounded-[8px] md:h-9 md:w-9 md:rounded-[10px]">
+              <BarChart3 className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </div>
             <div>
-              <h3 className="text-[24px] font-semibold leading-7 text-slate-950">경력 요약</h3>
+              <h3 className="text-[16px] font-semibold leading-5 text-slate-950 md:text-[24px] md:leading-7">경력 요약</h3>
             </div>
           </div>
         </div>
 
         <div className="mt-2 grid gap-2 md:mt-3 md:gap-3 xl:grid-cols-2" data-export-dashboard-upper>
-          <div className="resume-positioning-card flex h-full w-full flex-col rounded-[10px] border border-slate-200 p-4 text-white">
+          <div className="resume-positioning-card flex h-full w-full flex-col rounded-[10px] border border-slate-200 p-3 text-white md:p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">Positioning</p>
             <div className="flex flex-1 flex-col">
-              <h4 className="mt-2 w-full text-xl font-semibold leading-7 sm:text-2xl">{profile.role}</h4>
-              <p className="mt-2 w-full text-[13px] leading-5 text-slate-300">{profile.summary}</p>
+              <h4 className="mt-2 w-full text-[16px] font-semibold leading-6 sm:text-2xl sm:leading-7">{profile.role}</h4>
+              <p className="resume-mobile-summary mt-2 w-full text-[12px] leading-5 text-slate-300 md:text-[13px]">{profile.summary}</p>
               <div className="mt-auto flex flex-wrap gap-1 pt-3">
                 {specialties.map((item) => (
-                  <span key={item} className="rounded-[5px] border border-white/15 bg-white/10 px-1.5 py-0.5 text-[11px] leading-4 text-slate-100">
+                  <span key={item} className="resume-positioning-tag rounded-[5px] border border-white/15 bg-white/10 px-1.5 py-0.5 text-[14px] leading-5 text-slate-100 md:text-[11px] md:leading-4">
                     {item}
                   </span>
                 ))}
@@ -304,7 +304,7 @@ export function CareerDashboard({
             </div>
           </div>
 
-          <div className="grid gap-1.5 md:gap-2.5">
+          <div className="resume-mobile-dashboard-meta grid gap-1.5 md:gap-2.5">
             <AccentPanel icon={ShieldCheck} title="인증 / 컴플라이언스">
               <div className="flex flex-wrap gap-1">
                 {complianceCoverage.map((item) => (
@@ -329,7 +329,7 @@ export function CareerDashboard({
           </div>
         </div>
 
-        <div className="mt-2 grid grid-cols-4 gap-1 md:mt-3 md:gap-2.5" data-export-kpis>
+        <div className="mt-2 grid grid-cols-4 gap-0.5 md:mt-3 md:gap-2.5" data-export-kpis>
           <DashboardStat icon={BriefcaseBusiness} label="총 프로젝트" value={`${totalProjects}건`} tone="projects" />
           <DashboardStat icon={Sparkles} label="활성 분야" value={`${activeCategories}개`} tone="categories" />
           <DashboardStat
@@ -341,7 +341,7 @@ export function CareerDashboard({
           <DashboardStat icon={Sparkles} label="주요 태그" value={`${tagDistribution.length}개`} tone="tags" />
         </div>
 
-        <div className="mt-2.5 grid gap-2 items-stretch md:mt-4 md:gap-3 xl:grid-cols-[minmax(220px,max-content)_minmax(0,1fr)_minmax(260px,max-content)]" data-export-dashboard-lower data-export-dashboard-panels>
+        <div className="resume-mobile-dashboard-detail mt-2.5 grid gap-2 items-stretch md:mt-4 md:gap-3 xl:grid-cols-[minmax(220px,max-content)_minmax(0,1fr)_minmax(260px,max-content)]" data-export-dashboard-lower data-export-dashboard-panels>
           <div className="h-full p-0.5 md:p-1 xl:max-w-[320px]" data-export-role-timeline>
             <AccentPanel icon={TrendingUp} title="역할 변화 타임라인">
               <div className="flex h-full flex-col justify-between space-y-3">
@@ -416,12 +416,12 @@ function DashboardStat({
   tone: "projects" | "categories" | "focus" | "tags";
 }) {
   return (
-    <div className={`resume-stat resume-stat--${tone} min-w-0 rounded-[10px] border border-white/20 p-2 sm:p-3`}>
+    <div className={`resume-stat resume-stat--${tone} min-w-0 rounded-[10px] border border-white/20 p-1.5 sm:p-3`}>
       <div className="flex items-center gap-1 text-white/80 sm:gap-2">
-        <Icon className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
-        <span className="min-w-0 break-keep text-[9px] leading-3 sm:text-[12px] sm:leading-4">{label}</span>
+        <Icon className="resume-stat-icon h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
+        <span className="resume-stat-label min-w-0 whitespace-nowrap text-[9px] leading-3 sm:text-[12px] sm:leading-4">{label}</span>
       </div>
-      <p className="mt-1 break-keep text-[10px] font-semibold leading-4 text-white sm:text-lg sm:leading-6">{value}</p>
+      <p className="resume-stat-value mt-1 whitespace-nowrap text-[10px] font-semibold leading-4 text-white sm:text-lg sm:leading-6">{value}</p>
     </div>
   );
 }

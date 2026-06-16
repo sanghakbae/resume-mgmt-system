@@ -99,6 +99,10 @@
   box-shadow: 0 10px 30px rgba(148, 163, 184, 0.12);
 }
 
+.resume-project-description-mobile {
+  display: none;
+}
+
 @keyframes resume-skill-shield-sway {
   from {
     transform: rotateY(-180deg);
@@ -157,21 +161,92 @@
    phones. Scoped to <768px so desktop and PDF export are unaffected; the rotating
    skill shield keeps its own tuned sizing. */
 @media (max-width: 767px) {
+  html,
+  body,
+  .resume-app {
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+  }
+
   .resume-app [class*="text-[9px]"]:not(.resume-skill-shield__item),
   .resume-app [class*="text-[10px]"]:not(.resume-skill-shield__item) {
-    font-size: 12px !important;
+    font-size: 11px !important;
   }
 
   .resume-app [class*="text-[11px]"]:not(.resume-skill-shield__item) {
-    font-size: 12.5px !important;
+    font-size: 11px !important;
   }
 
   .resume-app [class*="text-[12px]"]:not(.resume-skill-shield__item) {
-    font-size: 13px !important;
+    font-size: 12px !important;
   }
 
   /* Give the bumped text enough breathing room where leading was very tight. */
   .resume-app [class*="leading-3"]:not(.resume-skill-shield__item) {
+    line-height: 1.35 !important;
+  }
+
+  .resume-mobile-summary {
+    display: -webkit-box;
+    font-size: 12px !important;
+    line-height: 1.65 !important;
+    max-height: 7.5rem;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+  }
+
+  .resume-mobile-dashboard-detail,
+  .resume-mobile-dashboard-meta,
+  .resume-project-description-desktop,
+  .resume-project-images {
+    display: none !important;
+  }
+
+  .resume-project-description-mobile {
+    display: block;
+  }
+
+  .resume-project-description-mobile .resume-rich,
+  .resume-responsibility-pill {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+  }
+
+  [data-export-resume] .resume-rich {
+    font-size: 13px !important;
+    line-height: 1.65 !important;
+  }
+
+  [data-export-resume] .resume-project-description-mobile .resume-rich {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+  }
+
+  [data-export-resume] h3,
+  [data-export-resume] h4,
+  [data-export-dashboard] h3,
+  [data-export-dashboard] h4 {
+    letter-spacing: 0 !important;
+  }
+
+  .resume-stat .resume-stat-label {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .resume-stat .resume-stat-icon {
+    display: none !important;
+  }
+
+  .resume-stat .resume-stat-value {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+  }
+
+  .resume-app :where([data-export-dashboard], [data-export-resume], [data-export-project-card]) span[class*="rounded-[5px]"] {
+    font-size: 14px !important;
     line-height: 1.35 !important;
   }
 }
@@ -197,6 +272,27 @@ html.is-exporting .print-content {
 html.is-exporting .resume-skill-shield__frame {
   animation: none !important;
   transform: none !important;
+}
+
+html.is-exporting .resume-mobile-summary {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+}
+
+html.is-exporting .resume-mobile-dashboard-detail,
+html.is-exporting .resume-mobile-dashboard-meta,
+html.is-exporting .resume-project-images {
+  display: grid !important;
+}
+
+html.is-exporting .resume-project-description-desktop {
+  display: block !important;
+}
+
+html.is-exporting .resume-project-description-mobile {
+  display: none !important;
 }
 
 html.is-exporting .truncate {

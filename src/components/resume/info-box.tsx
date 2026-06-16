@@ -14,12 +14,12 @@ export function InfoBox({ icon: Icon, label, value, href, className = "" }: Info
   const normalizedHref = normalizeUrl(href);
 
   return (
-    <div className={`flex h-full min-h-[56px] min-w-0 flex-col rounded-[10px] border border-slate-200 bg-slate-50 px-2 py-1.5 md:min-h-[80px] md:px-3 md:py-2.5 ${className}`.trim()}>
-      <div className="mb-1 flex items-center gap-1.5 text-slate-500 md:mb-1.5 md:gap-2">
+    <div className={`flex min-w-0 flex-col rounded-[10px] border border-slate-200 bg-slate-50 px-2 py-1 md:px-3 md:py-2.5 ${className}`.trim()}>
+      <div className="mb-0.5 flex items-center gap-1.5 text-slate-500 md:mb-1.5 md:gap-2">
         <Icon className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4" />
         <span className="break-keep text-[12px] leading-4">{label}</span>
       </div>
-      <div className="flex min-w-0 flex-1 items-center">
+      <div className="flex min-w-0 items-start">
         {normalizedHref ? (
           <a
             href={normalizedHref}

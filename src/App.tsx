@@ -109,7 +109,6 @@ function getExperienceImages(item: ExperienceItem) {
 
 export default function App() {
   const isPublicResumeMode = ((import.meta.env.VITE_PUBLIC_RESUME_MODE as string | undefined) ?? "false") === "true";
-  const isMobilePreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mobilePreview") === "1";
   const adminEmails = parseEnvEmailList(import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
   const editorEmails = parseEnvEmailList(import.meta.env.VITE_EDITOR_EMAILS as string | undefined);
   const configuredWorkspaceId = (import.meta.env.VITE_PRIMARY_WORKSPACE_ID as string | undefined)?.trim();
@@ -177,7 +176,7 @@ export default function App() {
     canSave: canSaveWorkspace,
   });
   const headerButtonClass = "min-h-7 px-2.5 py-0.5 text-[10px] leading-4 md:text-[11px]";
-  const mobileHeaderChipClass = "h-7 shrink-0 whitespace-nowrap rounded-[9px] border px-2 py-0 text-[10px] leading-4";
+  const mobileHeaderChipClass = "h-7 shrink-0 whitespace-nowrap rounded-[9px] border px-1.5 py-0 text-[10px] leading-4 sm:px-2";
   const publicHeaderControlClass = "h-7 w-full min-w-0 md:w-[180px]";
 
   useEffect(() => {
@@ -198,15 +197,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!linkPopupUrl) return;
+    if (!linkPopupUrl) {
+      document.body.style.overflow = "";
+      return;
+    }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setLinkPopupUrl(null);
     };
+    const previousOverflow = document.body.style.overflow;
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [linkPopupUrl]);
 
@@ -718,7 +721,7 @@ export default function App() {
       <div className="flex min-h-[inherit] flex-col gap-1 md:gap-5">
         <Card className="z-30 shrink-0 rounded-[10px] border border-slate-200 bg-white/95 shadow-sm backdrop-blur screen-only">
           <CardContent className="p-2 sm:p-2.5">
-            <div className={isPublicResumeMode ? "grid w-full grid-cols-2 items-center gap-1.5 md:flex md:flex-wrap md:justify-end md:overflow-visible" : "flex w-full flex-nowrap items-center gap-1 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0"}>
+            <div className={isPublicResumeMode ? "grid w-full grid-cols-3 items-center gap-1 md:flex md:flex-wrap md:justify-end md:gap-1.5 md:overflow-visible" : "flex w-full flex-nowrap items-center gap-1 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0"}>
               {!isPublicResumeMode ? (
                 <>
                   {user ? (
@@ -752,10 +755,12 @@ export default function App() {
                     aria-label="이력서 PDF 다운로드"
                   >
                     <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {isDownloadingPdf ? "생성 중..." : "PDF 다운로드"}
+                    <span className="sm:hidden">{isDownloadingPdf ? "생성중" : "PDF"}</span>
+                    <span className="hidden sm:inline">{isDownloadingPdf ? "생성 중..." : "PDF 다운로드"}</span>
                   </button>
                   <div className={`${mobileHeaderChipClass} ${publicHeaderControlClass} flex items-center justify-center gap-1 border-slate-200 bg-slate-50 text-[12px] font-medium text-slate-600 md:px-2.5 md:text-[12px]`}>
-                    방문 횟수: {visitCount}
+                    <span className="sm:hidden">방문 {visitCount}</span>
+                    <span className="hidden sm:inline">방문 횟수: {visitCount}</span>
                   </div>
                   {user ? (
                     <div className={`${mobileHeaderChipClass} ${publicHeaderControlClass} flex items-center gap-1.5 border-slate-200 bg-slate-50 text-slate-600 md:px-2.5 md:text-[12px]`}>
@@ -767,7 +772,7 @@ export default function App() {
                   ) : null}
                   {!user && isFirebaseConfigured ? (
                     <div className={`${publicHeaderControlClass} shrink-0`}>
-                      <GoogleSignInButton compact={isMobilePreview} disabled={!isReady} onSuccess={signIn} />
+                      <GoogleSignInButton compact disabled={!isReady} onSuccess={signIn} />
                     </div>
                   ) : null}
                   {!user && !isFirebaseConfigured ? (
@@ -886,13 +891,11 @@ export default function App() {
                     ) : (
                       <div className="space-y-2 md:space-y-4">
                         <div data-pdf-section="resume" className="space-y-2 md:space-y-4">
-                          <Card className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
-                            <CardContent className="space-y-2 p-3.5 sm:p-4 md:space-y-4 md:p-5">
-                              <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
-                            </CardContent>
-                          </Card>
+                          <div className="bg-transparent" data-export-dashboard>
+                            <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
+                          </div>
                           <div className="space-y-2 md:space-y-4">
-                            <h2 className="text-2xl font-extrabold leading-7 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+                            <h2 className="mt-3 text-[16px] font-extrabold leading-5 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)] md:mt-0 md:text-2xl md:leading-7">
                               배상학 이력서
                             </h2>
                             <ResumePreview
@@ -1348,7 +1351,7 @@ function TechnicalCareerNarrative({ items }: { items: ExperienceItem[] }) {
   const { summary, companies } = buildTechnicalCareerNarrative(items);
 
   return (
-    <article className="rounded-[10px] border border-slate-200 bg-white px-4 pb-6 pt-4 sm:px-5 sm:pb-7 sm:pt-5">
+    <article className="rounded-[10px] border border-slate-200 bg-white px-2.5 pb-5 pt-3 sm:px-5 sm:pb-7 sm:pt-5">
       <div>
         <h3 className="text-base font-semibold leading-6 text-slate-950">Summary</h3>
         <p className="mt-2 text-sm leading-7 text-slate-700">{summary}</p>
