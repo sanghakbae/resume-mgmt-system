@@ -14,7 +14,7 @@ import { useResumeWorkspace } from "@/hooks/use-resume-workspace";
 import { prepareProfilePhoto } from "@/lib/profile-photo";
 import { buildProfileSummary } from "@/lib/profile-summary";
 import { generateSecurityTags, inferExperienceCategory } from "@/lib/security-tags";
-import { isAssetUploadConfigured, isFirebaseConfigured, uploadResumeAsset } from "@/lib/firebase";
+import { getLatestResumePdfSnapshot, isAssetUploadConfigured, isFirebaseConfigured, uploadResumeAsset, uploadResumePdfSnapshot } from "@/lib/firebase";
 import { isEmptyRichText, listToHtml } from "@/lib/rich-text";
 import { fetchPublicVisitLogs, getPublicVisitCount, getVisitorNetworkInfo, incrementPublicVisitCount, recordPublicDownloadLog, recordPublicVisitLog, shouldCountPublicVisit } from "@/lib/visit-counter";
 import type {
@@ -105,6 +105,26 @@ function dedupeExperienceItems(items: ExperienceItem[]) {
 
 function getExperienceImages(item: ExperienceItem) {
   return Array.from(new Set([...(item.images ?? []), item.image].filter((image): image is string => Boolean(image))));
+}
+
+function getPdfSnapshotMonthKey(date = new Date()) {
+  return date.toISOString().slice(0, 7);
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  downloadUrl(url, fileName);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadUrl(url: string, fileName: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export default function App() {
@@ -481,7 +501,36 @@ export default function App() {
 
   const downloadResumePdf = async () => {
     if (isDownloadingPdf) return;
+    const isMobilePdfDownload = window.matchMedia("(max-width: 767px)").matches;
+    if (isMobilePdfDownload && !window.confirm("PDF를 다운로드 하시겠습니까?")) return;
+
     setIsDownloadingPdf(true);
+    const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
+    const pdfFileName = `${safeName}_이력서.pdf`;
+    const recordPdfDownload = async () => {
+      const visitorInfo = await getVisitorNetworkInfo();
+      await recordPublicDownloadLog({
+        ownerId: activeOwnerId,
+        ownerName: derivedProfile.name?.trim() || "이력서",
+        userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
+        userEmail: user?.email ?? "",
+        visitorInfo,
+      });
+    };
+
+    try {
+      const snapshot = await getLatestResumePdfSnapshot(activeOwnerId);
+      if (snapshot?.publicUrl) {
+        const snapshotUrl = new URL(snapshot.publicUrl);
+        snapshotUrl.searchParams.set("downloadName", pdfFileName);
+        downloadUrl(snapshotUrl.toString(), pdfFileName);
+        await recordPdfDownload();
+        setIsDownloadingPdf(false);
+        return;
+      }
+    } catch (snapshotError) {
+      console.warn("PDF 스냅샷 다운로드 준비에 실패했습니다. 즉시 생성으로 전환합니다.", snapshotError);
+    }
 
     // The full resume (resume/portfolio/technical sections) only renders in
     // preview mode on the dashboard tab; force that so the PDF contains the whole
@@ -490,7 +539,6 @@ export default function App() {
     const previousSection = selectedEditorSection;
     setIsEditMode(false);
     setSelectedEditorSection("dashboard");
-    document.documentElement.classList.add("is-exporting");
 
     // Let the forced layout render before capturing.
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -541,26 +589,30 @@ export default function App() {
         import("jspdf"),
       ]);
 
-      const isMobilePdfDownload = window.matchMedia("(max-width: 767px)").matches;
       const sectionEls = Array.from(target.querySelectorAll<HTMLElement>("[data-pdf-section]"));
       const captureTargets: HTMLElement[] = (() => {
-        if (!isMobilePdfDownload) return sectionEls.length ? sectionEls : [target];
-
         const targets: HTMLElement[] = [];
         const sourceSections = sectionEls.length ? sectionEls : [target];
         sourceSections.forEach((sectionEl) => {
-          if (sectionEl.dataset.pdfSection !== "resume") {
-            targets.push(sectionEl);
+          if (sectionEl.dataset.pdfSection === "resume") {
+            const dashboard = sectionEl.querySelector<HTMLElement>("[data-export-dashboard]");
+            const dashboardParts = [
+              dashboard?.querySelector<HTMLElement>("[data-export-dashboard-upper]"),
+              dashboard?.querySelector<HTMLElement>("[data-export-kpis]"),
+              ...(dashboard ? Array.from(dashboard.querySelectorAll<HTMLElement>("[data-export-dashboard-panels] > *")) : []),
+            ].filter((el): el is HTMLElement => Boolean(el));
+
+            const resumeParts = [
+              ...dashboardParts,
+              ...Array.from(sectionEl.querySelectorAll<HTMLElement>("[data-export-intro], [data-export-company] [data-export-block], [data-export-company] [data-export-project-card]")),
+            ];
+
+            targets.push(...resumeParts);
             return;
           }
 
-          const resumeParts = [
-            sectionEl.querySelector<HTMLElement>("[data-export-dashboard]"),
-            sectionEl.querySelector<HTMLElement>("[data-export-intro]"),
-            ...Array.from(sectionEl.querySelectorAll<HTMLElement>("[data-export-company]")),
-          ].filter((el): el is HTMLElement => Boolean(el));
-
-          targets.push(...resumeParts);
+          const blocks = Array.from(sectionEl.querySelectorAll<HTMLElement>("[data-export-block], [data-export-project-card]"));
+          targets.push(...(blocks.length ? blocks : [sectionEl]));
         });
 
         return targets.length ? targets : sourceSections;
@@ -593,12 +645,12 @@ export default function App() {
         },
       };
 
-      // Each section becomes a single continuous page sized exactly to its content,
-      // so nothing is sliced across A4 page breaks (which caused headers to appear
-      // cut off at the bottom of one page and repeated on the next).
       const PAGE_WIDTH_MM = 210; // A4 width
+      const PAGE_HEIGHT_MM = 297; // A4 height
       const margin = 5;
       const contentWidthMm = PAGE_WIDTH_MM - margin * 2;
+      const contentHeightMm = PAGE_HEIGHT_MM - margin * 2;
+      const blockGapMm = 2;
       // Render at a fixed desktop width so a download from a phone still uses the
       // desktop layout. Chrome handles very large canvases (scale 2 stays crisp);
       // Safari/iOS cap at ~16k px and return an empty 0×0 canvas, so step down then.
@@ -606,6 +658,16 @@ export default function App() {
       const scaleCandidates = isMobilePdfDownload ? [1, 0.75, 0.5] : [2, 1.5, 1, 0.75, 0.5];
 
       let pdf: InstanceType<typeof jsPDF> | null = null;
+      let currentPageYmm = margin;
+
+      const addA4Page = () => {
+        if (!pdf) {
+          pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "p" });
+        } else {
+          pdf.addPage("a4", "p");
+        }
+        currentPageYmm = margin;
+      };
 
       for (const sectionEl of captureTargets) {
         let sectionCanvas: HTMLCanvasElement | null = null;
@@ -622,35 +684,59 @@ export default function App() {
         }
 
         if (!sectionCanvas) continue;
-        const imgHeightMm = (sectionCanvas.height * contentWidthMm) / sectionCanvas.width;
-        if (!Number.isFinite(imgHeightMm) || imgHeightMm <= 0) continue;
-        const pageHeightMm = imgHeightMm + margin * 2;
-        const imgData = sectionCanvas.toDataURL("image/jpeg", 0.95);
+        const blockHeightMm = (sectionCanvas.height * contentWidthMm) / sectionCanvas.width;
+        if (!Number.isFinite(blockHeightMm) || blockHeightMm <= 0) continue;
 
-        if (!pdf) {
-          pdf = new jsPDF({ unit: "mm", format: [PAGE_WIDTH_MM, pageHeightMm], orientation: "p" });
-        } else {
-          pdf.addPage([PAGE_WIDTH_MM, pageHeightMm], "p");
+        if (blockHeightMm <= contentHeightMm) {
+          if (!pdf || currentPageYmm + blockHeightMm > PAGE_HEIGHT_MM - margin) {
+            addA4Page();
+          }
+
+          pdf.addImage(sectionCanvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, currentPageYmm, contentWidthMm, blockHeightMm);
+          currentPageYmm += blockHeightMm + blockGapMm;
+          continue;
         }
-        pdf.addImage(imgData, "JPEG", margin, margin, contentWidthMm, imgHeightMm);
+
+        if (!pdf || currentPageYmm > margin) {
+          addA4Page();
+        }
+
+        const sliceHeightPx = Math.max(1, Math.floor((contentHeightMm * sectionCanvas.width) / contentWidthMm));
+        for (let sourceY = 0; sourceY < sectionCanvas.height; sourceY += sliceHeightPx) {
+          if (sourceY > 0) addA4Page();
+          const currentSliceHeightPx = Math.min(sliceHeightPx, sectionCanvas.height - sourceY);
+          const sliceCanvas = document.createElement("canvas");
+          sliceCanvas.width = sectionCanvas.width;
+          sliceCanvas.height = currentSliceHeightPx;
+          const context = sliceCanvas.getContext("2d");
+          if (!context) continue;
+
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+          context.drawImage(sectionCanvas, 0, sourceY, sectionCanvas.width, currentSliceHeightPx, 0, 0, sectionCanvas.width, currentSliceHeightPx);
+
+          const imgHeightMm = (currentSliceHeightPx * contentWidthMm) / sectionCanvas.width;
+          if (!Number.isFinite(imgHeightMm) || imgHeightMm <= 0) continue;
+          pdf!.addImage(sliceCanvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, contentWidthMm, imgHeightMm);
+          currentPageYmm = margin + imgHeightMm + blockGapMm;
+        }
       }
 
       if (!pdf) throw new Error("이력서 콘텐츠를 캡처하지 못했습니다.");
 
-      const safeName = (derivedProfile.name ?? "이력서").replace(/\s+/g, "_");
-      pdf.save(`${safeName}_이력서.pdf`);
+      const pdfBlob = pdf.output("blob") as Blob;
+      downloadBlob(pdfBlob, pdfFileName);
 
       try {
-        const visitorInfo = await getVisitorNetworkInfo();
-        await recordPublicDownloadLog({
-          ownerId: activeOwnerId,
-          ownerName: derivedProfile.name?.trim() || "이력서",
-          userLabel: (user?.name ?? "").trim() || (user?.email ?? "").trim() || "게스트",
-          userEmail: user?.email ?? "",
-          visitorInfo,
-        });
+        await recordPdfDownload();
       } catch (logError) {
         console.warn("PDF 다운로드 로그 기록에 실패했습니다.", logError);
+      }
+
+      try {
+        await uploadResumePdfSnapshot(pdfBlob, activeOwnerId, getPdfSnapshotMonthKey());
+      } catch (snapshotError) {
+        console.warn("PDF 월간 스냅샷 저장에 실패했습니다.", snapshotError);
       }
     } catch (pdfError) {
       setAssetUploadError(pdfError instanceof Error ? pdfError.message : "PDF 다운로드에 실패했습니다.");
@@ -922,7 +1008,7 @@ export default function App() {
                             <CareerDashboard items={allExperiences} profile={derivedProfile} companies={companies} />
                           </div>
                           <div className="space-y-2 md:space-y-4">
-                            <h2 className="mt-3 text-[16px] font-extrabold leading-5 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)] md:mt-0 md:text-2xl md:leading-7">
+                            <h2 className="mt-3 text-[16px] font-extrabold leading-5 tracking-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)] md:mt-0 md:text-2xl md:leading-7" data-export-block>
                               배상학 이력서
                             </h2>
                             <ResumePreview
@@ -1215,7 +1301,7 @@ function GeneratedExperiencePanel({
     return (
       <Card className="overflow-hidden rounded-[10px] border border-sky-100 bg-white shadow-sm">
         <CardContent className="space-y-3 p-0">
-          <div className="flex items-center justify-between gap-3 border-b border-sky-900 bg-sky-900 px-3.5 py-3 text-white sm:px-4">
+          <div className="flex items-center justify-between gap-3 border-b border-sky-900 bg-sky-900 px-3.5 py-3 text-white sm:px-4" data-export-block>
             <h2 className="text-lg font-semibold leading-6">{title}</h2>
             <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold leading-4 text-sky-50">{items.length}건</span>
           </div>
@@ -1249,7 +1335,7 @@ function GeneratedExperiencePanel({
   return (
     <Card className={`overflow-hidden rounded-[10px] border shadow-sm ${panelTone.card}`}>
       <CardContent className="space-y-3 p-0">
-        <div className={`flex flex-col gap-1 border-b px-3.5 py-3 sm:px-4 ${panelTone.header}`}>
+        <div className={`flex flex-col gap-1 border-b px-3.5 py-3 sm:px-4 ${panelTone.header}`} data-export-block>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold leading-6">{title}</h2>
             {variant === "portfolio" ? (
@@ -1287,7 +1373,7 @@ function PortfolioArtifactCard({
   const images = getExperienceImages(item);
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4">
+    <div className="min-w-0 overflow-hidden rounded-[10px] border border-sky-100 bg-white p-3.5 sm:p-4" data-export-block>
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="break-keep text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
@@ -1383,14 +1469,14 @@ function TechnicalCareerNarrative({ items }: { items: ExperienceItem[] }) {
 
   return (
     <article className="rounded-[10px] border border-slate-200 bg-white px-2.5 pb-5 pt-3 sm:px-5 sm:pb-7 sm:pt-5">
-      <div>
+      <div data-export-block>
         <h3 className="text-base font-semibold leading-6 text-slate-950">Summary</h3>
         <p className="mt-2 text-sm leading-7 text-slate-700">{summary}</p>
       </div>
 
       <div className="mt-5 space-y-5">
         {companies.map((company) => (
-          <section key={company.organization} className="border-t border-slate-100 pt-4 last:pb-1">
+          <section key={company.organization} className="border-t border-slate-100 pt-4 last:pb-1" data-export-block>
             <h4 className="text-sm font-semibold leading-5 text-slate-950">{company.organization}</h4>
             <p className="mt-1.5 text-sm leading-7 text-slate-700">{company.description}</p>
           </section>

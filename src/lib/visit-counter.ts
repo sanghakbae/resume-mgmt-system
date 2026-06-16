@@ -164,6 +164,11 @@ export async function getVisitorNetworkInfo(): Promise<VisitorNetworkInfo> {
   }
 
   const cloudflareInfo = await getCloudflareVisitorInfo(referrer);
+  if (cloudflareInfo.ipAddress && isIpv4Address(cloudflareInfo.ipAddress)) return cloudflareInfo;
+
+  const ipv4Info = await getPublicIpv4Info(referrer);
+  if (ipv4Info.ipAddress) return ipv4Info;
+
   if (cloudflareInfo.ipAddress) return cloudflareInfo;
 
   const fallbackInfo = await getPublicIpFallbackInfo(referrer);
@@ -201,6 +206,29 @@ async function getCloudflareVisitorInfo(referrer: string): Promise<VisitorNetwor
   }
 }
 
+async function getPublicIpv4Info(referrer: string): Promise<VisitorNetworkInfo> {
+  try {
+    const response = await fetch("https://api.ipify.org?format=json", {
+      cache: "no-store",
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      return { referrer };
+    }
+
+    const data = await response.json();
+    const ipAddress = typeof data.ip === "string" ? data.ip : "";
+    if (!isIpv4Address(ipAddress)) {
+      return { referrer };
+    }
+
+    return enrichIpLocation(ipAddress, referrer);
+  } catch {
+    return { referrer };
+  }
+}
+
 async function getPublicIpFallbackInfo(referrer: string): Promise<VisitorNetworkInfo> {
   try {
     const response = await fetch("https://ipapi.co/json/", {
@@ -233,6 +261,39 @@ async function getPublicIpFallbackInfo(referrer: string): Promise<VisitorNetwork
   } catch {
     return { referrer };
   }
+}
+
+async function enrichIpLocation(ipAddress: string, referrer: string): Promise<VisitorNetworkInfo> {
+  try {
+    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ipAddress)}/json/`, {
+      cache: "no-store",
+      credentials: "omit",
+    });
+
+    if (!response.ok) {
+      return { ipAddress, referrer };
+    }
+
+    const data = await response.json();
+    const countryCode = typeof data.country_code === "string" ? data.country_code.toUpperCase() : undefined;
+    const countryName = typeof data.country_name === "string" ? data.country_name : countryCode ? formatCountryLabel(countryCode) : "";
+    const region = typeof data.region === "string" ? data.region : "";
+    const city = typeof data.city === "string" ? data.city : "";
+    const locationLabel = [countryName, region, city].filter(Boolean).join(" / ") || countryCode;
+
+    return {
+      ipAddress,
+      countryCode,
+      locationLabel,
+      referrer,
+    };
+  } catch {
+    return { ipAddress, referrer };
+  }
+}
+
+function isIpv4Address(value: string) {
+  return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(value);
 }
 
 function parseCloudflareTrace(value: string) {

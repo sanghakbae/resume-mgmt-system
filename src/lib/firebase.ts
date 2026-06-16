@@ -30,8 +30,8 @@ if (isFirebaseConfigured) {
     messagingSenderId,
   });
   authInstance = getAuth(app);
-  // Mirror the old JSON/Supabase behaviour: drop undefined fields instead of
-  // throwing, since resume items carry optional fields (image, url, etc.).
+  // Drop undefined fields instead of throwing, since resume items carry
+  // optional fields (image, url, etc.).
   try {
     firestoreInstance = initializeFirestore(app, { ignoreUndefinedProperties: true });
   } catch {
@@ -45,6 +45,13 @@ if (isFirebaseConfigured) {
 
 export const auth = authInstance;
 export const db = firestoreInstance;
+
+type ResumePdfSnapshot = {
+  key: string;
+  publicUrl: string;
+  month: string;
+  uploadedAt?: string | null;
+};
 
 export async function uploadResumeAsset(file: File, ownerId: string, kind: "profile" | "experience") {
   if (!assetApiBaseUrl) {
@@ -75,4 +82,58 @@ export async function uploadResumeAsset(file: File, ownerId: string, kind: "prof
   }
 
   return payload.publicUrl;
+}
+
+export async function getLatestResumePdfSnapshot(ownerId: string): Promise<ResumePdfSnapshot | null> {
+  if (!assetApiBaseUrl) return null;
+
+  const response = await fetch(`${assetApiBaseUrl}/api/snapshots/latest?ownerId=${encodeURIComponent(ownerId)}`, {
+    cache: "no-store",
+  });
+
+  if (response.status === 404) return null;
+
+  const payload = (await response.json().catch(() => null)) as (ResumePdfSnapshot & { error?: string }) | null;
+  if (!response.ok || !payload?.publicUrl) {
+    throw new Error(payload?.error || "PDF 스냅샷을 확인하지 못했습니다.");
+  }
+
+  return {
+    key: payload.key,
+    publicUrl: payload.publicUrl,
+    month: payload.month,
+    uploadedAt: payload.uploadedAt ?? null,
+  };
+}
+
+export async function uploadResumePdfSnapshot(blob: Blob, ownerId: string, month: string) {
+  if (!assetApiBaseUrl) {
+    throw new Error("PDF snapshot storage is not configured");
+  }
+
+  const idToken = auth?.currentUser ? await auth.currentUser.getIdToken().catch(() => null) : null;
+  if (!idToken) {
+    return null;
+  }
+
+  const file = new File([blob], `${ownerId}-${month}.pdf`, { type: "application/pdf" });
+  const formData = new FormData();
+  formData.set("file", file);
+  formData.set("ownerId", ownerId);
+  formData.set("month", month);
+
+  const response = await fetch(`${assetApiBaseUrl}/api/snapshots/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: formData,
+  });
+
+  const payload = (await response.json().catch(() => null)) as (ResumePdfSnapshot & { error?: string }) | null;
+  if (!response.ok || !payload?.publicUrl) {
+    throw new Error(payload?.error || "PDF 스냅샷 저장에 실패했습니다.");
+  }
+
+  return payload;
 }

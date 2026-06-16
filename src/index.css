@@ -276,6 +276,12 @@ html.is-exporting .resume-app {
 html.is-exporting .print-content {
   width: 1024px !important;
   max-width: 1024px !important;
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif !important;
+  text-rendering: geometricPrecision !important;
+}
+
+html.is-exporting .print-content * {
+  font-family: inherit !important;
 }
 
 html.is-exporting [data-pdf-section] {
@@ -329,6 +335,39 @@ html.is-exporting .truncate {
 html.is-exporting .resume-stat span,
 html.is-exporting .resume-stat p {
   line-height: 1.5 !important;
+}
+
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) {
+  align-items: flex-start !important;
+  align-content: flex-start !important;
+}
+
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) > * {
+  align-self: flex-start !important;
+}
+
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) [class*="h-full"] {
+  height: auto !important;
+}
+
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) [class*="flex-1"] {
+  flex: 0 1 auto !important;
+}
+
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) [class*="justify-center"],
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) [class*="justify-between"],
+html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) [class*="justify-end"] {
+  justify-content: flex-start !important;
+}
+
+html.is-exporting .print-content span[class*="rounded-[5px]"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 0 !important;
+  vertical-align: top !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  line-height: 1.25 !important;
 }
 
 html.is-exporting [class*="leading-none"] {

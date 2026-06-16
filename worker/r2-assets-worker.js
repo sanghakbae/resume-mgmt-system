@@ -1,10 +1,13 @@
 const ALLOWED_ORIGINS = new Set([
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
   "http://127.0.0.1:5678",
   "http://localhost:5678",
   "https://resume.sanghak.kr",
 ]);
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_SNAPSHOT_BYTES = 30 * 1024 * 1024;
 
 export default {
   async fetch(request, env) {
@@ -16,6 +19,14 @@ export default {
 
     if (request.method === "POST" && url.pathname === "/api/assets/upload") {
       return uploadAsset(request, env);
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/snapshots/latest") {
+      return getLatestPdfSnapshot(request, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/snapshots/upload") {
+      return uploadPdfSnapshot(request, env);
     }
 
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/assets/")) {
@@ -73,6 +84,83 @@ async function uploadAsset(request, env) {
   return jsonResponse({ key, publicUrl }, 201, request);
 }
 
+async function uploadPdfSnapshot(request, env) {
+  if (!env.RESUME_BUCKET) {
+    return jsonResponse({ error: "R2 bucket binding is not configured." }, 500, request);
+  }
+
+  const authError = await validateUploadAccess(request, env);
+  if (authError) {
+    return jsonResponse({ error: authError }, 401, request);
+  }
+
+  const form = await request.formData();
+  const file = form.get("file");
+  const ownerId = sanitizePathPart(String(form.get("ownerId") || "public-resume"));
+  const month = sanitizeMonth(String(form.get("month") || getCurrentMonthKey()));
+
+  if (!(file instanceof File)) {
+    return jsonResponse({ error: "file is required." }, 400, request);
+  }
+
+  if (file.type !== "application/pdf") {
+    return jsonResponse({ error: "Only PDF snapshots are allowed." }, 400, request);
+  }
+
+  if (file.size > MAX_PDF_SNAPSHOT_BYTES) {
+    return jsonResponse({ error: "PDF snapshot is too large." }, 413, request);
+  }
+
+  const key = `snapshots/${ownerId}/${month}.pdf`;
+  const fileName = encodeURIComponent(`${ownerId}-${month}.pdf`);
+
+  await env.RESUME_BUCKET.put(key, file.stream(), {
+    httpMetadata: {
+      contentType: "application/pdf",
+      cacheControl: "public, max-age=3600",
+      contentDisposition: `attachment; filename*=UTF-8''${fileName}`,
+    },
+    customMetadata: {
+      ownerId,
+      month,
+      kind: "pdf-snapshot",
+    },
+  });
+
+  const publicUrl = `${new URL(request.url).origin}/assets/${key}`;
+  return jsonResponse({ key, publicUrl, month }, 201, request);
+}
+
+async function getLatestPdfSnapshot(request, env) {
+  if (!env.RESUME_BUCKET) {
+    return jsonResponse({ error: "R2 bucket binding is not configured." }, 500, request);
+  }
+
+  const url = new URL(request.url);
+  const ownerId = sanitizePathPart(url.searchParams.get("ownerId") || "public-resume");
+  const prefix = `snapshots/${ownerId}/`;
+  const listed = await env.RESUME_BUCKET.list({ prefix, limit: 100 });
+  const latest = listed.objects
+    .filter((object) => object.key.endsWith(".pdf"))
+    .sort((a, b) => b.key.localeCompare(a.key))[0];
+
+  if (!latest) {
+    return jsonResponse({ error: "PDF snapshot not found." }, 404, request);
+  }
+
+  const month = latest.key.slice(prefix.length).replace(/\.pdf$/i, "");
+  return jsonResponse(
+    {
+      key: latest.key,
+      publicUrl: `${url.origin}/assets/${latest.key}`,
+      month,
+      uploadedAt: latest.uploaded?.toISOString?.() || null,
+    },
+    200,
+    request,
+  );
+}
+
 async function getAsset(key, env, request) {
   if (!env.RESUME_BUCKET) {
     return jsonResponse({ error: "R2 bucket binding is not configured." }, 500, request);
@@ -89,6 +177,10 @@ async function getAsset(key, env, request) {
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("cache-control", object.httpMetadata?.cacheControl || "public, max-age=3600");
+  if (safeKey.startsWith("snapshots/")) {
+    const downloadName = new URL(request.url).searchParams.get("downloadName") || "resume.pdf";
+    headers.set("content-disposition", `attachment; filename*=UTF-8''${encodeURIComponent(downloadName)}`);
+  }
 
   return new Response(request.method === "HEAD" ? null : object.body, { headers });
 }
@@ -103,6 +195,15 @@ function corsHeaders(request) {
     "access-control-allow-headers": "authorization, content-type",
     "vary": "Origin",
   };
+}
+
+function getCurrentMonthKey() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function sanitizeMonth(value) {
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}$/.test(trimmed) ? trimmed : getCurrentMonthKey();
 }
 
 async function validateUploadAccess(request, env) {
