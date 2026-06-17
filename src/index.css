@@ -157,6 +157,38 @@
   font-size: 23px !important;
 }
 
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :where(p, li, summary, .resume-rich) {
+  line-height: 1.5 !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :where(h1, h2, h3, h4, h5, h6) {
+  line-height: 1.25 !important;
+}
+
+.resume-app [data-pdf-section="technical"] article > div:nth-child(2) {
+  margin-top: 10px !important;
+}
+
+.resume-app [data-pdf-section="technical"] article {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+.resume-app [data-pdf-section="technical"] article > div:nth-child(2) > section {
+  padding-top: 8px !important;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-app [data-pdf-section="technical"] article > div:nth-child(2) > section + section {
+  margin-top: 8px !important;
+}
+
+.resume-app [data-pdf-section="technical"] article p {
+  margin-top: 4px !important;
+  line-height: 1.42 !important;
+}
+
 .google-sign-in-button {
   display: flex !important;
   align-items: center !important;
@@ -233,7 +265,7 @@
   .resume-mobile-summary {
     display: -webkit-box;
     font-size: 11px !important;
-    line-height: 1.65 !important;
+    line-height: 1.5 !important;
     max-height: 7.5rem;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -258,17 +290,17 @@
   .resume-project-description-mobile .resume-rich,
   .resume-responsibility-pill {
     font-size: 11px !important;
-    line-height: 1.55 !important;
+    line-height: 1.45 !important;
   }
 
   [data-export-resume] .resume-rich {
     font-size: 12px !important;
-    line-height: 1.65 !important;
+    line-height: 1.5 !important;
   }
 
   [data-export-resume] .resume-project-description-mobile .resume-rich {
     font-size: 11px !important;
-    line-height: 1.55 !important;
+    line-height: 1.45 !important;
   }
 
   [data-export-resume] h3,
