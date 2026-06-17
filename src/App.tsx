@@ -697,29 +697,12 @@ export default function App() {
           continue;
         }
 
-        if (!pdf || currentPageYmm > margin) {
-          addA4Page();
-        }
-
-        const sliceHeightPx = Math.max(1, Math.floor((contentHeightMm * sectionCanvas.width) / contentWidthMm));
-        for (let sourceY = 0; sourceY < sectionCanvas.height; sourceY += sliceHeightPx) {
-          if (sourceY > 0) addA4Page();
-          const currentSliceHeightPx = Math.min(sliceHeightPx, sectionCanvas.height - sourceY);
-          const sliceCanvas = document.createElement("canvas");
-          sliceCanvas.width = sectionCanvas.width;
-          sliceCanvas.height = currentSliceHeightPx;
-          const context = sliceCanvas.getContext("2d");
-          if (!context) continue;
-
-          context.fillStyle = "#ffffff";
-          context.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-          context.drawImage(sectionCanvas, 0, sourceY, sectionCanvas.width, currentSliceHeightPx, 0, 0, sectionCanvas.width, currentSliceHeightPx);
-
-          const imgHeightMm = (currentSliceHeightPx * contentWidthMm) / sectionCanvas.width;
-          if (!Number.isFinite(imgHeightMm) || imgHeightMm <= 0) continue;
-          pdf!.addImage(sliceCanvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, contentWidthMm, imgHeightMm);
-          currentPageYmm = margin + imgHeightMm + blockGapMm;
-        }
+        addA4Page();
+        const fittedWidthMm = Math.min(contentWidthMm, (sectionCanvas.width * contentHeightMm) / sectionCanvas.height);
+        const fittedHeightMm = (sectionCanvas.height * fittedWidthMm) / sectionCanvas.width;
+        const fittedXmm = (PAGE_WIDTH_MM - fittedWidthMm) / 2;
+        pdf.addImage(sectionCanvas.toDataURL("image/jpeg", 0.95), "JPEG", fittedXmm, margin, fittedWidthMm, fittedHeightMm);
+        currentPageYmm = margin + fittedHeightMm + blockGapMm;
       }
 
       if (!pdf) throw new Error("이력서 콘텐츠를 캡처하지 못했습니다.");

@@ -337,6 +337,13 @@ html.is-exporting .resume-stat p {
   line-height: 1.5 !important;
 }
 
+html.is-exporting .resume-stat {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
 html.is-exporting .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company]) {
   align-items: flex-start !important;
   align-content: flex-start !important;
@@ -393,26 +400,45 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
 
 @media print {
   @page {
-    margin: 12mm;
+    margin: 8mm;
     size: A4;
   }
 
   html,
   body {
-    background: #fff;
+    margin: 0 !important;
+    background: #fff !important;
   }
 
   .screen-only {
     display: none !important;
   }
 
+  .resume-app .screen-only {
+    display: none !important;
+  }
+
   .resume-app {
+    display: block !important;
+    min-height: 0 !important;
     padding: 0 !important;
     background: #fff !important;
+    max-width: none !important;
+  }
+
+  .resume-app > div,
+  .resume-app > div > div,
+  .resume-app > div > div > div,
+  .resume-app > div > div > div > div {
+    display: block !important;
+    min-height: 0 !important;
   }
 
   .print-content {
+    display: block !important;
     width: 100% !important;
+    max-width: none !important;
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif !important;
   }
 
   .print-content,
@@ -427,6 +453,101 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
   .resume-skill-shield__frame {
     animation: none !important;
     transform: none !important;
+  }
+
+  .print-content :where(h1, h2, h3, h4, h5, h6, p, li, summary, span) {
+    transform: none !important;
+    vertical-align: baseline !important;
+  }
+
+  .print-content .truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  .print-content :where(.grid) {
+    align-items: start !important;
+  }
+
+  .print-content :where(.h-full, [class*="h-full"]) {
+    height: auto !important;
+  }
+
+  .print-content :where(.flex-1, [class*="flex-1"]) {
+    flex: 0 1 auto !important;
+  }
+
+  .print-content :where(.items-center, [class*="items-center"]),
+  .print-content :where(.items-end, [class*="items-end"]) {
+    align-items: flex-start !important;
+  }
+
+  .print-content :where(.justify-center, [class*="justify-center"], .justify-between, [class*="justify-between"], .justify-end, [class*="justify-end"]) {
+    justify-content: flex-start !important;
+  }
+
+  .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company], [data-export-project-card]) {
+    align-items: flex-start !important;
+    align-content: flex-start !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-content .resume-company-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-content [data-pdf-section="portfolio"],
+  .print-content [data-pdf-section="technical"] {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-content .resume-projects-heading {
+    display: none !important;
+  }
+
+  .print-content [data-export-company] [data-export-block],
+  .print-content [data-export-project-card],
+  .print-content .resume-panel-shadow,
+  .print-content .resume-stat {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-content .resume-mobile-summary,
+  .print-content .resume-mobile-dashboard-detail,
+  .print-content .resume-mobile-dashboard-meta,
+  .print-content .resume-project-description-desktop,
+  .print-content .resume-project-images {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+    -webkit-line-clamp: unset !important;
+  }
+
+  .print-content .resume-project-images {
+    display: grid !important;
+  }
+
+  .print-content .resume-project-description-mobile,
+  .print-content .resume-project-images-mobile {
+    display: none !important;
+  }
+
+  .print-content img {
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  .print-content span[class*="rounded-[5px]"] {
+    display: inline-flex !important;
+    min-height: 0 !important;
+    align-items: center !important;
+    line-height: 1.25 !important;
+    vertical-align: baseline !important;
   }
 }
 

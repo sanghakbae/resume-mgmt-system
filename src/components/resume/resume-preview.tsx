@@ -74,8 +74,12 @@ export function ResumePreview({
         </div>
 
         <div className="mt-3 space-y-3 md:mt-6 md:space-y-6">
-          {companyGroups.map(({ company, items }) => (
-            <section key={company.organization} className="overflow-hidden rounded-[10px] border border-slate-200 bg-white" data-export-company>
+          {companyGroups.map(({ company, items }, companyIndex) => (
+            <section
+              key={company.organization}
+              className={`overflow-hidden rounded-[10px] border border-slate-200 bg-white ${companyIndex > 0 ? "resume-company-page-break" : ""}`}
+              data-export-company
+            >
               <div className="border-b border-slate-800 bg-slate-900 px-3.5 py-3 text-white sm:px-4" data-export-block>
                 <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
@@ -115,7 +119,7 @@ export function ResumePreview({
               </div>
 
               <div className="p-2.5 sm:p-4">
-                <div className="mb-3 flex items-center gap-3" data-export-block>
+                <div className="resume-projects-heading mb-3 flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-slate-900 text-white">
                     <BriefcaseBusiness className="h-4 w-4" />
                   </div>
