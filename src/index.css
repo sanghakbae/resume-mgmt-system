@@ -117,6 +117,46 @@
   }
 }
 
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[9px\]) {
+  font-size: 8px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[10px\], .text-xs) {
+  font-size: 9px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[11px\]) {
+  font-size: 10px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[12px\]) {
+  font-size: 11px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[13px\]) {
+  font-size: 12px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[14px\], .text-sm) {
+  font-size: 13px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[16px\], .text-base) {
+  font-size: 15px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[18px\], .text-lg) {
+  font-size: 17px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[20px\], .text-xl) {
+  font-size: 19px !important;
+}
+
+.resume-app :where([data-export-dashboard], [data-export-resume], [data-pdf-section]) :is(.text-\[24px\], .text-2xl) {
+  font-size: 23px !important;
+}
+
 .google-sign-in-button {
   display: flex !important;
   align-items: center !important;
@@ -172,17 +212,17 @@
     touch-action: pan-y;
   }
 
-  .resume-app [class*="text-[9px]"]:not(.resume-skill-shield__item),
-  .resume-app [class*="text-[10px]"]:not(.resume-skill-shield__item) {
-    font-size: 11px !important;
+  .resume-app .text-\[9px\]:not(.resume-skill-shield__item):not(.resume-stat-label):not(.resume-stat-value),
+  .resume-app .text-\[10px\]:not(.resume-skill-shield__item):not(.resume-stat-label):not(.resume-stat-value) {
+    font-size: 10px !important;
   }
 
-  .resume-app [class*="text-[11px]"]:not(.resume-skill-shield__item) {
-    font-size: 11px !important;
+  .resume-app .text-\[11px\]:not(.resume-skill-shield__item):not(.resume-stat-label):not(.resume-stat-value) {
+    font-size: 10px !important;
   }
 
-  .resume-app [class*="text-[12px]"]:not(.resume-skill-shield__item) {
-    font-size: 12px !important;
+  .resume-app .text-\[12px\]:not(.resume-skill-shield__item):not(.resume-stat-label):not(.resume-stat-value) {
+    font-size: 11px !important;
   }
 
   /* Give the bumped text enough breathing room where leading was very tight. */
@@ -192,7 +232,7 @@
 
   .resume-mobile-summary {
     display: -webkit-box;
-    font-size: 12px !important;
+    font-size: 11px !important;
     line-height: 1.65 !important;
     max-height: 7.5rem;
     overflow: hidden;
@@ -217,17 +257,17 @@
 
   .resume-project-description-mobile .resume-rich,
   .resume-responsibility-pill {
-    font-size: 12px !important;
+    font-size: 11px !important;
     line-height: 1.55 !important;
   }
 
   [data-export-resume] .resume-rich {
-    font-size: 13px !important;
+    font-size: 12px !important;
     line-height: 1.65 !important;
   }
 
   [data-export-resume] .resume-project-description-mobile .resume-rich {
-    font-size: 12px !important;
+    font-size: 11px !important;
     line-height: 1.55 !important;
   }
 
@@ -239,7 +279,7 @@
   }
 
   .resume-stat .resume-stat-label {
-    font-size: 14px !important;
+    font-size: 13px !important;
     line-height: 1.2 !important;
     letter-spacing: 0 !important;
   }
@@ -249,12 +289,12 @@
   }
 
   .resume-stat .resume-stat-value {
-    font-size: 14px !important;
+    font-size: 13px !important;
     line-height: 1.25 !important;
   }
 
   .resume-app :where([data-export-dashboard], [data-export-resume], [data-export-project-card]) span[class*="rounded-[5px]"] {
-    font-size: 14px !important;
+    font-size: 13px !important;
     line-height: 1.35 !important;
   }
 }
