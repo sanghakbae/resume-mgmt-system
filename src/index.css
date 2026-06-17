@@ -494,9 +494,15 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
     page-break-inside: avoid;
   }
 
-  .print-content .resume-company-page-break {
-    break-before: page;
-    page-break-before: always;
+  .print-content [data-export-company],
+  .print-content [data-export-project-card]:not(:has(.resume-project-images)) {
+    overflow: visible !important;
+  }
+
+  .print-content [data-export-company] > [data-export-block],
+  .print-content [data-export-company-summary] {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .print-content [data-pdf-section="portfolio"],
@@ -510,6 +516,7 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
   }
 
   .print-content [data-export-company] [data-export-block],
+  .print-content [data-export-company-summary],
   .print-content .resume-panel-shadow,
   .print-content .resume-stat {
     break-inside: avoid;

@@ -77,7 +77,7 @@ export function ResumePreview({
           {companyGroups.map(({ company, items }, companyIndex) => (
             <section
               key={company.organization}
-              className={`overflow-hidden rounded-[10px] border border-slate-200 bg-white ${companyIndex > 0 ? "resume-company-page-break" : ""}`}
+              className="overflow-hidden rounded-[10px] border border-slate-200 bg-white"
               data-export-company
             >
               <div className="border-b border-slate-800 bg-slate-900 px-3.5 py-3 text-white sm:px-4" data-export-block>
