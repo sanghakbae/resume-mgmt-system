@@ -604,7 +604,11 @@ export default function App() {
 
             const resumeParts = [
               ...dashboardParts,
-              ...Array.from(sectionEl.querySelectorAll<HTMLElement>("[data-export-intro], [data-export-company] [data-export-block], [data-export-company] [data-export-project-card]")),
+              ...Array.from(
+                sectionEl.querySelectorAll<HTMLElement>(
+                  "[data-export-intro], [data-export-company] [data-export-block], [data-export-company] [data-export-company-summary], [data-export-company] [data-export-project-card]",
+                ),
+              ),
             ];
 
             targets.push(...resumeParts);

@@ -487,7 +487,7 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
     justify-content: flex-start !important;
   }
 
-  .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company], [data-export-project-card]) {
+  .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company] > [data-export-block], [data-export-company-summary]) {
     align-items: flex-start !important;
     align-content: flex-start !important;
     break-inside: avoid;
@@ -510,11 +510,30 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
   }
 
   .print-content [data-export-company] [data-export-block],
-  .print-content [data-export-project-card],
+  .print-content [data-export-company-summary],
   .print-content .resume-panel-shadow,
   .print-content .resume-stat {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .print-content [data-export-project-card] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-content [data-export-project-card]:not(:has(.resume-project-images)) {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .print-content [data-export-project-card] .resume-project-images {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .print-content [data-export-project-card] .resume-project-images img {
+    max-height: 150px !important;
   }
 
   .print-content .resume-mobile-summary,

@@ -94,7 +94,7 @@ export function ResumePreview({
                 </div>
               </div>
 
-              <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-2.5 sm:p-4" data-export-block>
+              <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 p-2.5 sm:p-4" data-export-company-summary>
                 <div
                   className="resume-rich break-keep text-sm leading-6 text-slate-600"
                   dangerouslySetInnerHTML={{ __html: renderRichText(company.summary) }}
