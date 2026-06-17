@@ -487,7 +487,7 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
     justify-content: flex-start !important;
   }
 
-  .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company] > [data-export-block], [data-export-company-summary]) {
+  .print-content :where([data-export-dashboard], [data-export-intro], [data-export-company] > [data-export-block]) {
     align-items: flex-start !important;
     align-content: flex-start !important;
     break-inside: avoid;
@@ -510,7 +510,6 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
   }
 
   .print-content [data-export-company] [data-export-block],
-  .print-content [data-export-company-summary],
   .print-content .resume-panel-shadow,
   .print-content .resume-stat {
     break-inside: avoid;
