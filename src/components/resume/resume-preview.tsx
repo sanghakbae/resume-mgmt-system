@@ -81,14 +81,14 @@ export function ResumePreview({
               data-export-company
             >
               <div className="border-b border-slate-800 bg-slate-900 px-3.5 py-3 text-white sm:px-4" data-export-block>
-                <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
+                <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start">
+                  <div className="min-w-0 md:flex-1">
                     <h3 className="break-keep text-lg font-semibold leading-6 text-white">{company.organization}</h3>
                     <p className="mt-1 break-keep text-[13px] leading-5 text-slate-300">
                       {[company.department, company.position].filter(Boolean).join(" / ")}
                     </p>
                   </div>
-                  <div className="break-keep rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[12px] font-medium leading-4 text-slate-100 shadow-sm">
+                  <div className="break-keep rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[12px] font-medium leading-4 text-slate-100 shadow-sm md:ml-auto">
                     {company.period}
                   </div>
                 </div>
