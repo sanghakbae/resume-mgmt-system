@@ -15,6 +15,8 @@ type ExperienceCardProps = {
 export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: ExperienceCardProps) {
   const linkPreview = getLinkPreview(item.url);
   const images = getExperienceImages(item);
+  const linkThumbnail = linkPreview ? (images[0] ?? linkPreview.screenshot) : "";
+  const linkThumbnailFallback = linkPreview ? (images[0] ? linkPreview.screenshot : linkPreview.fallbackScreenshot) : "";
 
   return (
     <div className="min-w-0 overflow-hidden rounded-[10px] border border-slate-200 px-2.5 py-1.5 sm:p-4" data-export-project-card>
@@ -81,12 +83,32 @@ export function ExperienceCard({ item, isEditMode, onEdit, onRemove }: Experienc
                 >
                   <div className="aspect-[16/10] h-14 shrink-0 overflow-hidden rounded-[6px] border border-slate-200 bg-slate-100 sm:h-16">
                     <img
-                      src={`https://s.wordpress.com/mshots/v1/${encodeURIComponent(item.url)}?w=320&h=200`}
+                      src={linkThumbnail}
+                      data-fallback-src={linkThumbnailFallback}
+                      data-final-fallback-src={linkPreview.favicon}
                       alt={`${linkPreview.hostname} 미리보기`}
                       loading="lazy"
                       className="h-full w-full object-cover object-top"
                       onError={(event) => {
                         const target = event.currentTarget;
+                        const fallbackSrc = target.dataset.fallbackSrc;
+                        const finalFallbackSrc = target.dataset.finalFallbackSrc;
+
+                        if (fallbackSrc && target.src !== fallbackSrc) {
+                          target.dataset.fallbackSrc = "";
+                          target.src = fallbackSrc;
+                          return;
+                        }
+
+                        if (finalFallbackSrc && target.src !== finalFallbackSrc) {
+                          target.dataset.finalFallbackSrc = "";
+                          target.src = finalFallbackSrc;
+                          target.style.setProperty("object-fit", "contain");
+                          target.style.setProperty("padding", "12px");
+                          target.style.setProperty("background", "#fff");
+                          return;
+                        }
+
                         target.parentElement?.style.setProperty("display", "none");
                       }}
                     />
@@ -175,6 +197,8 @@ function getLinkPreview(url?: string) {
     const hostname = parsed.hostname.replace(/^www\./, "");
     return {
       hostname,
+      screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
+      fallbackScreenshot: `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=320&h=200`,
       favicon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=64`,
     };
   } catch {
