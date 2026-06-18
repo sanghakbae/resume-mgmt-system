@@ -571,6 +571,11 @@ html.is-exporting .print-content [class*="min-h-\["][class*="items-center"] {
     overflow: visible !important;
   }
 
+  .print-content .resume-company-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
   .print-content [data-export-company] > [data-export-block],
   .print-content [data-export-company-summary] {
     break-after: avoid;
