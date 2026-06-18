@@ -638,6 +638,11 @@ export default function App() {
           clonedDoc.querySelectorAll<HTMLElement>(".print-content .grid").forEach((grid) => {
             grid.style.setProperty("align-items", "start", "important");
           });
+          clonedDoc.querySelectorAll<HTMLElement>(".print-content .resume-responsibility-pill").forEach((el) => {
+            el.style.setProperty("text-align", "left", "important");
+            el.style.setProperty("align-items", "flex-start", "important");
+            el.style.setProperty("justify-content", "flex-start", "important");
+          });
           clonedDoc.querySelectorAll<HTMLElement>(".print-content [class*='leading-none']").forEach((el) => {
             el.style.setProperty("line-height", "1.4", "important");
           });

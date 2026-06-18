@@ -109,7 +109,7 @@ export function ResumePreview({
                     {company.responsibilities.map((responsibility) => (
                       <div
                         key={responsibility}
-                        className="resume-responsibility-pill flex min-h-[28px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-center text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
+                        className="resume-responsibility-pill flex min-h-[28px] items-start justify-start rounded-[10px] border border-slate-200 bg-white px-1.5 py-0.5 text-left text-[12px] font-semibold leading-4 text-slate-700 md:min-h-[38px] md:px-2 md:py-1"
                       >
                         {responsibility}
                       </div>

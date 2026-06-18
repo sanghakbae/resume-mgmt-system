@@ -189,6 +189,15 @@
   line-height: 1.42 !important;
 }
 
+.resume-app :where([data-export-company-summary], .resume-responsibility-pill) {
+  text-align: left !important;
+}
+
+.resume-app .resume-responsibility-pill {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
 .google-sign-in-button {
   display: flex !important;
   align-items: center !important;
