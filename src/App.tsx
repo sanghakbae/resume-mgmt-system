@@ -674,6 +674,14 @@ export default function App() {
       };
 
       for (const sectionEl of captureTargets) {
+        const shouldStartCompanyPage =
+          sectionEl.matches("[data-export-company] > [data-export-block]") &&
+          sectionEl.closest("[data-export-company]")?.classList.contains("resume-company-page-break");
+
+        if (shouldStartCompanyPage && pdf) {
+          addA4Page();
+        }
+
         let sectionCanvas: HTMLCanvasElement | null = null;
         for (const scale of scaleCandidates) {
           const candidate = await html2canvas(sectionEl, {
